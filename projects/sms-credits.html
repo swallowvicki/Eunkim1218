@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shopcord · SMS Credits — Mockup 2026-10-13</title>
+<title>Shopcord · SMS Credits — Mockup 2026-10-16</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============ Design tokens (Figma variables, node 140:14350 — same set as Phase 2 mockup) ============ */
@@ -1763,6 +1763,9 @@ button { font-family: inherit; }
 /* A receipt block, not a full-width table. At the panel's width the label sat ~950px
    from its value and the eye had to travel for every line; capped and pulled right it
    sits directly above the Pay button, which is where the same numbers are going. */
+.buy-notes { display: flex; flex-direction: column; }
+.buy-notes .pay-with-line { margin-top: 0; }
+.pay-with-line.is-empty .linkbtn { font-size: 12px; font-weight: 600; color: var(--fg); text-decoration: underline; padding: 0; background: none; border: none; cursor: pointer; }
 .buy-summary { display: flex; flex-direction: column; margin-top: 0; width: 100%; padding: 16px 18px 18px; border: 1px solid var(--border-elements); border-radius: 12px; background: var(--muted); }
 .buy-summary .pay-with-line { margin-top: 12px; }
 .buy-summary .pay-with { margin-top: 12px; }
@@ -2505,6 +2508,22 @@ const LEDGERS = {
     { date: 'Feb 11, 2027', src: 'Campaign', sub: 'Restock Alert',  type: 'MMS', n: -2480 },
     { date: 'Feb 06, 2027', src: '1:1 chat', type: 'SMS', n: -120 } ],
 
+  /* `canceledCarried` — 4,200 free credits carried over at the switch, two packs bought, cancelled
+     Feb 14. 16,700 in, 1,900 out → 14,800; the 1,900 came out of the free pool, so 2,300 free remain. */
+  14800: [
+    { date: 'Nov 01, 2026', src: 'Free credits', type: 'Credit', n: 4200 },
+    BUY_1K,
+    { date: 'Jan 14, 2027', src: '1:1 chat', type: 'SMS', n: -264 },
+    BUY_5K,
+    { date: 'Feb 09, 2027', src: 'Campaign', sub: 'Winter Clearance', type: 'MMS', n: -1636 } ],
+
+  /* `freeCarried` — 2,100 free messages left on the postpaid plan became 4,200 credits at the
+     switch (×2), and they never expire. 4,200 in, 1,260 out → 2,940, all of it free. */
+  2940: [
+    { date: 'Nov 01, 2026', src: 'Free credits', type: 'Credit', n: 4200 },
+    { date: 'Nov 18, 2026', src: 'Campaign', sub: 'Holiday Launch', type: 'SMS', n: -1200 },
+    { date: 'Dec 02, 2026', src: '1:1 chat', type: 'SMS', n: -60 } ],
+
   /* Every kind of row Credits Used can hold (Grace, 10/9) — `creditsUsedKinds`. The grant
      lands Nov 05, 2026 and is spent free-first; 2,204 free credits are still unused on
      Feb 03, 2027 (issue + 90), so they expire as one row. One operator removal, test sends
@@ -2754,6 +2773,20 @@ const SCENARIOS = {
      alive. Everything it exposes is listed in Gap I-31 — the two pools have different expiry
      clocks, the modal now promises "your credits don't expire", and the balance card behind
      it counts down the free grant's last 9 days. */
+  /* Free credits carried over from the postpaid plan (PM 10/16): issued before the switch, so
+     they never expire. No date anywhere, no expiry mails, no Expired row. */
+  freeCarried: {
+    label: 'Free credits carried over — no expiry', hint: '11/1 이전 지급분 · 만료일 표시 없음 (10/16)',
+    screen: 'account', tab: 'sms',
+    sub: 'active', cards: ['visa', 'mc'], history: false,
+    credits: { sms: 1470, smsRes: 0, mms: 0, mmsRes: 0, free: 2940, freeIssued: 'Sep 03, 2026', freeReceived: 4200 },
+  },
+  overviewCarried: {
+    label: 'SMS Marketing — free credits carried over', hint: '11/1 이전 지급분 · Use by 줄 없음',
+    screen: 'smsOverview',
+    sub: 'active', cards: ['visa', 'mc'], history: false,
+    credits: { sms: 1470, smsRes: 0, mms: 0, mmsRes: 0, free: 2940, freeIssued: 'Sep 03, 2026', freeReceived: 4200 },
+  },
   creditsUsedKinds: {
     label: 'Credits Used — every row kind', hint: '무료 만료 · 운영 회수 · 테스트 발송 · 무료/구매 구분',
     screen: 'account', tab: 'sms',
@@ -2777,6 +2810,14 @@ const SCENARIOS = {
     screen: 'account', tab: 'sms',
     sub: 'canceled', endedAt: 'Feb 14, 2027', cards: ['visa', 'mc'], history: true,
     credits: { sms: 7350, smsRes: 0, mms: 0, mmsRes: 0, free: 2200, freeIssued: 'Dec 01, 2026' },
+  },
+  /* The same cancellation for a vendor whose free credits came over from postpaid (10/16): they
+     never expire, so there is no deadline, and the card names them in the one line it has. */
+  canceledCarried: {
+    label: 'Canceled — free credits carried over (no expiry)', hint: '11/1 이전 지급분 · 마감 줄 없음, 무료분 포함 한 줄',
+    screen: 'account', tab: 'sms',
+    sub: 'canceled', endedAt: 'Feb 14, 2027', cards: ['visa', 'mc'], history: true,
+    credits: { sms: 7400, smsRes: 0, mms: 0, mmsRes: 0, free: 2300, freeIssued: 'Sep 03, 2026', freeReceived: 4200 },
   },
   /* SMS Chat — the credit rule is felt here, and after 진아 9/16 it has ONE zero state, not two.
      Inbound grace is abolished: there is no window where credits are gone but messages are
@@ -4015,7 +4056,7 @@ function banners() {
      on 9/14, but only the low-balance banner's condition was extended at the time, and that
      banner was deleted on 9/16; the zero one never listed the screen at all.
      진아's rule is the credit state on the SMS screens, and the dashboard is one of them. */
-  if (!isR1() && availNow === 0 && paidOn() && (onSms || onCampaign || s.screen === 'smsChat' || s.screen === 'smsOverview') && isMaster()) out.push(h`
+  if (!isR1() && availNow === 0 && paidOn() && (onSms || onCampaign || s.screen === 'smsChat' || s.screen === 'smsOverview')) out.push(h`
     <div class="alert alert-danger" data-banner="credits">
       <span class="alert-ico">${ICO.lock}</span>
       <div class="alert-body">
@@ -4038,7 +4079,7 @@ function banners() {
         <!-- PM 10/13: the "not saved" sentence stays — the vendor never sees that content again,
              so it is the honest form. The button follows Figma 2061:51189. -->
         <div class="alert-msg">Campaigns and 1:1 chat replies won't send, and <strong>buyer messages aren't reaching you</strong> — they are not saved. Buy credits to start again.</div>
-        <div class="alert-actions"><button class="btn btn-outline" data-act="buyPack" data-val="${isUnified() ? 'credits' : 'sms'}">Buy SMS credits</button></div>
+        ${isMaster() ? h`<div class="alert-actions"><button class="btn btn-outline" data-act="buyPack" data-val="${isUnified() ? 'credits' : 'sms'}">Buy SMS credits</button></div>` : ''}
       </div>
     </div>`);
 
@@ -4297,6 +4338,14 @@ const numberHeldUntil = () => plusMonths(sc().endedAt || clock().next, NUMBER_HO
    smsNumber: false; everything with an SMS surface holds one by default. */
 const hasNumber = () => hasCredits() && sc().smsNumber !== false;
 const FREE_CREDIT_DAYS = 90;
+/* Free credits issued before the switch NEVER expire (PM, 10/16 — vendors were told so during
+   sales). Those issued from the switch on expire 90 days after issue, and credits added by
+   Shopcord never expire. Every screen and mail that prints a free-credit date asks this. */
+const freeExpiryOf = (c) => {
+  if (!c || !c.free || !c.freeIssued) return null;
+  if (new Date(c.freeIssued) < new Date(SMS_CUTOVER)) return null;
+  return plusDays(c.freeIssued, FREE_CREDIT_DAYS);
+};
 /* Purchased credits and a pack's bonus never expire (PM 10/13, legal + finance). Only free
    credits do. The line is Figma 947:30401's, and both purchase modals use it. */
 const paidTerms = () => "Purchased credits don't expire, cannot be transferred to other accounts, or refunded.";
@@ -4599,8 +4648,7 @@ function balanceCardUnified(remaining, reserved) {
   const available = remaining - reserved;
   const free = Math.min(sc().credits.free || 0, available);
   // 90 days from the day the grant was issued (TFN approval, 진아 §3).
-  const freeExpiry = (free && sc().credits.freeIssued)
-    ? plusDays(sc().credits.freeIssued, FREE_CREDIT_DAYS) : null;
+  const freeExpiry = free ? freeExpiryOf(sc().credits) : null;
   const freeDays = freeExpiry ? daysUntil(freeExpiry) : null;
   const lowAt = lowThreshold();
   const low = lowAt > 0 && available > 0 && available <= lowAt;
@@ -4667,7 +4715,7 @@ function balanceCardUnified(remaining, reserved) {
       <span class="balance-big">${n(remaining)}</span>
       <span class="balance-unit">credits frozen</span>
     </div>
-    ${free ? h`
+    ${free && freeExpiry ? h`
     <!-- FREE FIRST, in both senses (Grace, 2026-09-11). Free credits are spent before paid
          ones (진아 §4), and here they are also the half with a clock - so they lead, and the
          paid balance reads as "the other". One word - "frozen" - had been covering two
@@ -4679,7 +4727,9 @@ function balanceCardUnified(remaining, reserved) {
     <div class="bal-note is-deadline"><strong>${n(free)} free credits</strong> expire <strong>${freeExpiry}</strong> — resubscribe before then or they are gone.</div>
     <div class="bal-note">The other <strong>${n(remaining - free)}</strong> stay on your account with no deadline, and become usable again the moment you resubscribe.</div>`
     : h`
-    <div class="bal-note">They stay on your account and become usable again the moment you resubscribe.</div>`}`
+    <!-- Free credits that never expire (issued before Nov 1) are named here, so a vendor
+         holding them is not left wondering whether they survive the cancellation (Grace, 10/16). -->
+    <div class="bal-note">They stay on your account${free ? h`, including your <strong>${n(free)}</strong> free credits,` : ''} and become usable again the moment you resubscribe.</div>`}`
     : (S.balView === 'statement' && reserved) ? ''
     : S.balView === 'trio' ? h`
     <div class="bal-trio">
@@ -5767,15 +5817,10 @@ function payWithRow() {
              This row serves the two ONE-TIME purchases (the credit pack panel and the
              campaign top-up); there is no next charge to distinguish it from, so it reads
              like a shop, not a billing statement. Same word as the button below it. -->
-        <span>Paying with your default card, <strong>ending ····${def.last4}</strong></span>
+        <span>Charged to your default card, <strong>ending ····${def.last4}</strong></span>
       </div>` : h`
-      <div class="pay-with is-empty">
-        <span class="pay-with-ico">${ICO.alert}</span>
-        <div style="flex:1">
-          <div class="t-strong" style="font-size:13px">No card on file</div>
-          <div class="foot-note">Add one and it becomes your default.</div>
-        </div>
-        <button class="btn btn-sm btn-primary" data-act="addCard">Add a payment method</button>
+      <div class="pay-with-line is-empty">
+        <span>Add a default payment card in Subscription to buy credits. <button class="linkbtn" data-act="goBilling">Go to Subscription</button></span>
       </div>`;
 }
 
@@ -5792,7 +5837,7 @@ function inlinePackPurchase() {
   const unit = type === 'credits' ? 'credits' : `${type.toUpperCase()} messages`;
   /* Matches the campaign modal's title and the button that opens it — the tab is SMS Credits,
      the button is Buy SMS credits, and this is the same purchase. */
-  const heading = type === 'credits' ? 'Buy SMS credits' : `Buy ${type.toUpperCase()} messages`;
+  const heading = type === 'credits' ? 'Buy SMS Credits' : `Buy ${type.toUpperCase()} messages`;
   // Derived from the pack's own price — not a new number, just the arithmetic the vendor
   // would otherwise do to compare $20/1,000 against $200/11,000.
   const dollars = parseFloat(String(sel.p).replace(/[^0-9.]/g, '')) || 0;
@@ -5803,6 +5848,7 @@ function inlinePackPurchase() {
     <div class="modal-head">
       <div>
         <div class="modal-title">${heading}</div>
+        <div class="modal-sub">You need more credits to send</div>
         <!-- ⚠ "They never expire while your account is open" was here and is now cut.
              the old §7.7's "credits never expire" was scoped to SUSPENSION only. Credit expiry
              in general is pending Finance (D-4), and L-1 asks outright whether credit
@@ -5838,6 +5884,8 @@ function inlinePackPurchase() {
         <div class="summary-row"><span class="lbl">After this purchase</span><span class="t-strong">${n(cur + sel.c)} ${type === 'credits' ? 'credits' : type.toUpperCase()}</span></div>
       </div>
       <div class="buy-body">
+      <div>
+      <div class="field-label">Pick a pack</div>
       <div class="pack-list" role="radiogroup" aria-label="Credit pack">
         ${packs.map((p, i) => h`
           <button class="pack-opt ${S.packSel === i ? 'is-sel' : ''}" role="radio" aria-checked="${S.packSel === i}" data-act="packSel" data-val="${i}">
@@ -5846,40 +5894,10 @@ function inlinePackPurchase() {
             <span class="pack-price">${p.p}</span>
           </button>`).join('')}
       </div>
-      <!-- D-11 note removed from screen (8/18): a decision ID is a reviewer's
-           fact, and the vendor has no use for knowing the list is provisional. The
-           prototype panel carries it. -->
-
-      <!-- Was a bordered four-row table: five rules for four facts, money and credits
-           alternating down one column, and the same $125.00 stated twice because a
-           single line item does not need a total row. Now the box and the internal
-           dividers are gone, the balance is one before → after line instead of two
-           rows, and the only rule left is the one above what actually gets charged. -->
-      <!-- The box stretches to end level with the pack list, so the space between the
-           balance and the total used to be blank. It is filled with the two facts that
-           belong to a purchase decision and were missing from it:
-             · how many of the credits are the bonus, when there is one
-           A "Per credit" row (2¢ · 1.9¢ · 1.8¢, derived from 진아 §1's $0.02) was there for
-           an hour and removed — Grace: 필요없는 말. The vendor is choosing an amount, not
-           auditing a unit rate, and the bonus already says which pack gives more.
-           And the disclosure the docs REQUIRE and the screen did not have: 제니 PB 3.5.0
-           asks for "non-refundable" on the purchase screen, and 진아 §3's 환불 정책 is
-           법무 확인 완료. It sits under what gets charged, which is what it qualifies. -->
-      <div class="buy-summary">
-        <div class="bs-row"><span class="lbl">${n(sel.c)} ${unit}</span><span class="t-strong">${sel.p}</span></div>
-        ${bonusN ? h`
-        <div class="bs-row"><span class="lbl">Bonus included</span><span class="t-strong">+${n(bonusN)} ${unit}</span></div>` : ''}
-        <!-- The before/after balance moved to the box at the TOP of this modal (2026-09-11).
-             It belongs before the choice, not after it: it is what the choice is measured
-             against. Keeping it in both places would state one fact twice in one modal. -->
-
-        <!-- "You pay", not "Charged today" (Grace, 2026-09-09: 그럼 지금 오늘 차지하지 뭐
-             언제 차지해???). She is right for THIS box: a credit purchase is one charge with
-             no other charge to distinguish it from, so "today" did no work. The word stays in
-             the SUBSCRIBE modal, where it sits beside "Next charge" and the contrast is the
-             whole point. "You pay" also matches the button under it, so the label and the
-             control state the same amount in the same words. -->
-        <div class="bs-row is-total"><span>You pay</span><span>${sel.p}</span></div>
+      </div>
+      <!-- Figma 947:30401: no summary box under the packs. The price is on the selected row,
+           and what follows is the card line, the disclosure and the consent. -->
+      <div class="buy-notes">
         ${payWithRow()}
         <!-- Figma 915:48685 replaced the one-line disclosure with three facts (Grace, 9/11).
              SUBJECT NARROWED TO "Purchased" (Grace, 2026-09-11). Figma's string said "Your
@@ -5893,7 +5911,7 @@ function inlinePackPurchase() {
         <!-- Figma 929:49270's fuller disclosure. "the campaign sends right away" is dropped
              here - there is no campaign in this entry point - and the consent names THIS
              modal's own button, because a consent line has to name the control being pressed. -->
-        <div class="helper">${ICO.info}<span>The selected pack is added to your SMS credit balance as soon as payment completes. ${paidTerms()}</span></div>
+        <div class="helper">${ICO.info}<span>${paidTerms()}</span></div>
         <div class="helper-consent">By clicking <strong>Buy ${n(sel.c)} ${unit}</strong>, you agree to the terms applicable to your SMS credits.</div>
       </div>
       </div>
@@ -5901,7 +5919,7 @@ function inlinePackPurchase() {
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" data-act="close">Cancel</button>
-      <button class="btn btn-primary" data-act="packBuy">Buy ${n(sel.c)} ${unit}</button>
+      ${CARDS[sc().cards[0]] ? h`<button class="btn btn-primary" data-act="packBuy">Buy ${n(sel.c)} ${unit}</button>` : h`<button class="btn btn-primary" disabled>Buy ${n(sel.c)} ${unit}</button>`}
     </div>
   </div>`;
 }
@@ -5954,8 +5972,8 @@ function modalConfirmCharge() {
              the SUBTITLE keeps the campaign context, and the summary box right below still
              opens with "Short by 160 credits" in red — so nothing about the urgency is lost,
              it just stops being the heading. -->
-        <div class="modal-title">Buy SMS credits</div>
-        <div class="modal-sub">Top up here and the campaign sends right away.</div>
+        <div class="modal-title">Buy SMS Credits</div>
+        <div class="modal-sub">You need more credits to send</div>
       </div>
       <button class="modal-x" data-act="close">${ICO.x}</button>
     </div>
@@ -6534,6 +6552,13 @@ const SMS_KEEPS = "SMS isn't changing. Those fees keep coming out of your settle
 /* One body, two shapes. A vendor may never have finished SMS onboarding, so the number
    block is conditional — and with no TFN this mail is the ONLY one they receive (Grace,
    9/14). What keeps working is stated before what locks, because that is the first worry. */
+/* Free credits keep expiring while the subscription is canceled (PM 10/13), so a mail that
+   says the credits stay must say which ones do not. Renders only when free credits remain. */
+const freeExpiryLine = () => {
+  const c = sc().credits || {};
+  const d = freeExpiryOf(c);
+  return d ? ` Free credits still expire on ${d}.` : '';
+};
 const cancelBody = (withNumber) => h`
       <p>Your Shopcord subscription ended on <b>${clock().next}</b>. You won't be charged again.</p>
       <div class="em-group keeps">
@@ -6557,7 +6582,7 @@ const cancelBody = (withNumber) => h`
       <div class="em-tag">Since you're using SMS</div>
       <p>Subscribe again before <b>${numberHeldUntil()}</b> and your number
         <b>+1 (855) 240-1180</b> stays yours. After that it may be released and cannot be recovered, and your SMS Campaigns and Chat history is removed from your account.</p>
-      ${!hasCredits() ? '' : "<p class=\"em-q\"><b>How about my SMS credits?</b> They stay in your balance, and anything held for a scheduled campaign comes back to it.</p>"}`}`;
+      ${!hasCredits() ? '' : h`<p class="em-q"><b>How about my SMS credits?</b> They stay in your balance, and anything held for a scheduled campaign comes back to it.${freeExpiryLine()}</p>`}`}`;
 
 /* One body for all three reminders. The hold clock is invisible — a cancelled vendor has
    stopped visiting, so nothing on screen counts it down — and a number a business has
@@ -6579,7 +6604,7 @@ const numberBody = (days) => h`
            so the line reassures AND draws the distinction.
            In production this should depend on actually holding a balance, not merely on
            credits existing as a feature. -->
-      ${!hasCredits() ? '' : "<p><b>Your SMS credits aren't affected.</b> They stay on your account whether or not the number is released.</p>"}
+      ${!hasCredits() ? '' : h`<p><b>Your SMS credits aren't affected.</b> They stay on your account whether or not the number is released.${freeExpiryLine()}</p>`}
       ${days !== 30 ? '' : '<p class="em-note">We\'ll remind you again <b>7 days</b> and <b>1 day</b> before the reservation ends.</p>'}`;
 
 /* WHERE EACH MAIL COMES FROM — the panel's own classification, not the email's.
@@ -7100,6 +7125,7 @@ const EMAILS = {
     subject: () => `SMS billing moves to prepaid credits on ${SMS_CUTOVER}`,
     title: () => 'SMS moves to prepaid credits',
     sub: () => `From ${SMS_CUTOVER}, sends draw from a credit balance`,
+    open: 'The line saying carried-over free credits expire 90 days after the change was removed: free credits issued before the switch never expire (policy, 10/16). The replacement sentence is the PM\u2019s to supply.',
     body: () => h`
       <p>Until now your SMS fees have come out of your settlement after sending. On
         <b>${SMS_CUTOVER}</b> that changes: you buy credits first, and sending draws them down.</p>
@@ -7110,7 +7136,6 @@ const EMAILS = {
       <ul class="em-ul">
         <li><b>Sends cannot be scheduled for ${SMS_CUTOVER} or later until the change is done.</b> Those sends need credits, and the balance does not exist yet.</li>
         <li>Every free message you have left becomes 2 credits (3,000 messages are 6,000 credits), deducted the same way.</li>
-        <li><b>Carried-over free credits now expire.</b> They can be used until ${fullD(addDays(dOf(SMS_CUTOVER), FREE_CREDIT_DAYS))}, ${FREE_CREDIT_DAYS} days after the change.</li>
         <li>After the change, buy credits in <b>SMS Credits</b>. Campaigns and 1:1 chat send from that balance and stop when it runs out.</li>
       </ul>`,
   },
@@ -7151,10 +7176,11 @@ const EMAILS = {
   },
 
   creditExpire30: {
-    label: 'Free credits expire in 30 days', hint: '사전 고지 1/3 · 90일 (SMS PRD §3)',
+    label: 'Free credits expire in 30 days', hint: '사전 고지 1/3 · 11/1 이후 지급분만',
     figma: null,
     src: 'r2',
     spec: '2차 §2 · PB 3.1.0 · 90일은 우리 것', to: 'Vendor', chan: ['Email', 'In-app'],
+    open: 'Sent only for free credits issued from Nov 1. Free credits issued before the switch never expire, so those vendors get none of the three expiry mails.',
     subject: () => '30 days left on your free credits',
     title: () => '30 days left on your free credits',
     sub: () => `6,000 free credits · expires ${freeGrantExpiry()}`,
@@ -7169,10 +7195,11 @@ const EMAILS = {
   },
 
   creditExpire7: {
-    label: 'Free credits expire in 7 days', hint: '사전 고지 2/3 · 90일 (SMS PRD §3)',
+    label: 'Free credits expire in 7 days', hint: '사전 고지 2/3 · 11/1 이후 지급분만',
     figma: null,
     src: 'r2',
     spec: '2차 §2 · PB 3.1.0 · 90일은 우리 것', to: 'Vendor', chan: ['Email', 'In-app'],
+    open: 'Sent only for free credits issued from Nov 1. Free credits issued before the switch never expire, so those vendors get none of the three expiry mails.',
     subject: () => '7 days left on your free credits',
     title: () => '7 days left on your free credits',
     sub: () => `6,000 free credits · expires ${freeGrantExpiry()}`,
@@ -7185,10 +7212,11 @@ const EMAILS = {
   creditExpire1: {
     /* The last one is the only one that can say "tomorrow", and it is the only one where the
        vendor cannot plan — so it says the date and nothing else it does not need. */
-    label: 'Free credits expire tomorrow', hint: '사전 고지 3/3 · 90일 (SMS PRD §3)',
+    label: 'Free credits expire tomorrow', hint: '사전 고지 3/3 · 11/1 이후 지급분만',
     figma: null,
     src: 'r2',
     spec: '2차 §2 · PB 3.1.0 · 90일은 우리 것', to: 'Vendor', chan: ['Email', 'In-app'],
+    open: 'Sent only for free credits issued from Nov 1. Free credits issued before the switch never expire, so those vendors get none of the three expiry mails.',
     subject: () => 'Your free credits expire tomorrow',
     title: () => 'Your free credits expire tomorrow',
     sub: () => `They expire on ${freeGrantExpiry()}`,
@@ -8065,9 +8093,9 @@ function docPreview() {
 // ── Prototype panel ─────────────────────────────────────────────────────────
 const PROTO_GROUPS = [
   { label: 'My Account · Subscription', keys: ['active', 'subAcct', 'nocard', 'trial', 'expiredActive', 'expired', 'expiredEnding', 'failed', 'restored', 'graceEnding', 'cancelling', 'canceled', 'canceledNoTfn', 'canceledGrace', 'chargeback', 'cardLimit'] },
-  { label: 'SMS credits &amp; sending', keys: ['credits', 'runningLow', 'exhausted', 'freeOnly', 'freeLow', 'freeAndPaid', 'creditsUsedKinds', 'canceledFree', 'numberHeld', 'numberReleased'], r2: true },
+  { label: 'SMS credits &amp; sending', keys: ['credits', 'runningLow', 'exhausted', 'freeOnly', 'freeLow', 'freeAndPaid', 'freeCarried', 'creditsUsedKinds', 'canceledFree', 'canceledCarried', 'numberHeld', 'numberReleased'], r2: true },
   { label: 'My Account · Payout', keys: ['payout'] },
-  { label: 'SMS Marketing', keys: ['smsOverview', 'overviewFree', 'overviewLow', 'overviewFreeLow', 'overviewDry'], r2: true },
+  { label: 'SMS Marketing', keys: ['smsOverview', 'overviewFree', 'overviewLow', 'overviewFreeLow', 'overviewCarried', 'overviewDry'], r2: true },
   { label: 'SMS Chat', keys: ['smsChat', 'chatLow', 'chatFreeLow', 'chatDry', 'chatMissed', 'chatMissedInactive'], r2: true },
   { label: 'Campaign send flow', keys: ['campaignOk', 'campaignLow', 'campaignShort', 'campaignLocked'], r2: true },
   { label: 'Orders · PO download', keys: ['ordersList', 'orderDetail', 'orderDetailNew'] },
@@ -8077,7 +8105,7 @@ function renderProto() {
   const el = document.getElementById('proto-panel');
   el.innerHTML = h`
     <div class="proto-title">Prototype states</div>
-    <div class="proto-sub">Shopcord <strong>SMS Credits</strong> · SMS 선불 크레딧 스펙 <strong>2026-10-13</strong><br>Pick a state below and every screen follows it. The <strong>ⓘ</strong> button at the bottom right turns developer annotations on.<br><strong>SMS 크레딧 범위만</strong> 담은 공유본입니다. 구독(1차)은 10/5 배포되어 빠졌습니다.<br>Snapshot <strong>2026-10-13</strong>.</div>
+    <div class="proto-sub">Shopcord <strong>SMS Credits</strong> · SMS 선불 크레딧 스펙 <strong>2026-10-13</strong><br>Pick a state below and every screen follows it. The <strong>ⓘ</strong> button at the bottom right turns developer annotations on.<br><strong>SMS 크레딧 범위만</strong> 담은 공유본입니다. 구독(1차)은 10/5 배포되어 빠졌습니다.<br>Snapshot <strong>2026-10-16</strong>.</div>
     ${hasCredits() ? h`
     <div class="proto-group">
       <div class="proto-group-label">Scheduled holds — how many campaigns</div>
@@ -8198,7 +8226,7 @@ function creditsCard() {
      grant larger than the available balance would otherwise print a figure the vendor
      cannot use. */
   const free = Math.min(c.free || 0, available);
-  const freeExpiry = (free && c.freeIssued) ? plusDays(c.freeIssued, FREE_CREDIT_DAYS) : null;
+  const freeExpiry = free ? freeExpiryOf(c) : null;
   return h`
   <div class="uc-wrap"><div class="usage-card">
     <div class="uc-title">Message credits</div>
@@ -8215,9 +8243,14 @@ function creditsCard() {
          arithmetic with it. The deadline rides underneath rather than in the label: the
          card is a narrow popover and "Free credits · use by Mar 01, 2027" would wrap
          into the figure column. -->
-    ${free ? h`
+    <!-- Three shapes (Grace, 10/14). Purchased only: no breakdown. Free only: no figures under
+         the balance either, since every one would repeat it; just the expiry line. Both: the
+         free / purchased pair, which only happens once in a vendor's life. -->
+    ${free && free === u.remaining ? h`
+    ${freeExpiry ? h`<div class="uc-sub">Free credits · expire <strong>${freeExpiry}</strong></div>` : h`<div class="uc-sub">Free credits</div>`}` : ''}
+    ${free && free !== u.remaining ? h`
     <div class="uc-row is-part"><span class="uc-k">Free credits</span><span class="uc-v">${n(free)}</span></div>
-    ${freeExpiry ? h`<div class="uc-sub">Used first · expires <strong>${freeExpiry}</strong></div>` : ''}
+    ${freeExpiry ? h`<div class="uc-sub">Used first · expires <strong>${freeExpiry}</strong></div>` : h`<div class="uc-sub">Used first</div>`}
     <!-- BOTH halves, or the vendor has to subtract to learn the other one (Grace, 2026-09-16).
          Shown only alongside the free row: with no grant, a purchased line would just repeat
          Current balance. The two add up to the row above them, so the breakdown checks itself.
@@ -8253,7 +8286,7 @@ function screenSmsOverview() {
   const u = unifiedTotals(c);
   const available = u.remaining - u.reserved;
   const free = Math.min(c.free || 0, available);
-  const freeExpiry = (free && c.freeIssued) ? plusDays(c.freeIssued, FREE_CREDIT_DAYS) : null;
+  const freeExpiry = free ? freeExpiryOf(c) : null;
   const freeDays = freeExpiry ? daysUntil(freeExpiry) : null;
   const num = NUMBER_STATES[numState()];
   return h`
@@ -8279,7 +8312,7 @@ function screenSmsOverview() {
            messages"; under the re-denomination the grant is 6,000 credits (= 3,000 messages),
            and a bar counting messages under a heading counting credits is the mismatch the
            9/16 spec warns about. */
-        const issued = WELCOME.n;
+        const issued = c.freeReceived || WELCOME.n;
         const used = Math.max(0, issued - free);
         return free > 0 ? h`
       <div class="free-strip">
@@ -9447,18 +9480,19 @@ const ANNOS = [
 
   { id: 'S2', sel: '.num-card .section-desc', title: 'State sentence — and what it will not promise', tags: 'DEV / PM',
     bullets: [
-      '@canceled The number is held for 3 months (<code>NUMBER_HOLD_MONTHS</code>); resuming before that date keeps it.',
+      '@canceled The number is held for 3 months after the subscription ends; resubscribing before that date keeps it.',
       '@canceled <b>The three months are not one state.</b> Month 1 the number stays <b>active</b>. From month 2 it is <b>suspended</b>. At the end of month 3 it is <b>released</b>.',
-      '@canceled The suspension exists to stop <b>inbound</b>. An incoming message is billable, and a vendor who has cancelled must not keep accruing cost — suspending the number is what stops it arriving at all.',
-      '@canceled <b>The buyer cannot tell.</b> A message sent to a suspended number still looks sent on their side, so nothing signals that it did not arrive — and <b>no auto-reply is possible</b> while suspended. The 발신전용 auto-reply belongs to the zero-balance state, not to this one (S19).',
+      '@canceled In month 1 buyer messages still arrive. From the switch (Nov 1) they are not charged and are stored hidden: their content is never shown, even after resubscribing, and the thread shows only <i>N messages not received while your subscription was inactive</i> (SMS PRD §5.2). From month 2 the suspension stops them arriving at all.',
+      '@canceled <b>The buyer cannot tell.</b> A message sent to a suspended number still looks sent on their side, so nothing signals that it did not arrive — and <b>no auto-reply is possible</b> while suspended.',
       '@numberGone The way back is two steps: resubscribe <b>and</b> go through SMS onboarding again, because sending and top-up are gated on TFN = Approved (SMS PRD §2).',
-      'The word is <b>released</b>, not deleted. Released is what we can observe; deleted is a claim about their data.',
-      'It does not say whether the same number comes back. That is still undecided.',
+      'The screen says <b>released</b>, not deleted: released is what the vendor can observe, and deleted would be a claim about their data.',
+      'It does not say whether the same number comes back — still undecided.',
     ],
     edge: [
-      'The number is held 3 months and then deleted, by hand in the MVP. Whether the same number can come back is still undecided.',
+      'After 3 months the number is deleted. In the MVP operations do it by hand; automatic deletion comes later (SMS PRD decision status, 10/7).',
+      'The vendor is told before it goes: reminder mails at 30, 7 and 1 days before the date.',
     ],
-    refs: 'SMS PRD §2' },
+    refs: 'SMS PRD §2 · §5.2' },
 
   { id: 'S3', sel: '.check-list', title: 'Top-up gate — four conditions, one place each', tags: 'DEV',
     bullets: [
@@ -9475,19 +9509,19 @@ const ANNOS = [
   { id: 'S4', group: true, sel: '.balance-card', title: 'Message credits — the balance card', tags: 'DEV / PM',
     bullets: [
       'Three figures — 잔여 · 예약 · 가용 (PB 3.6.0 · SMS PRD §3 · §4).',
-      '<b>Three kinds of credit, spent in one order — free → bonus → purchased.</b> <b>Free</b>: 6,000 at the first TFN approval, once per vendor, expires 90 days from issue. <b>Bonus</b>: the extra a $100 or $200 pack adds (+5% / +10%), a separate kind that never expires. <b>Purchased</b>: what the pack price bought; it never expires (SMS PRD §3).',
-      'The order is a <b>deduction rule, not a display rule</b>. The balance is one figure and the vendor is never asked which kind is being spent — so a pack’s bonus is consumed before the credits its own price paid for, silently.',
-      'Available leads, because that is the figure a vendor acts on. The rest is one sentence, and only when something is reserved.',
-      'Badges: <code>Running low</code> at <code>lowThreshold()</code> (S25), <code>Out of credits</code> at zero. Running low is under 10% of the last pack bought, never under 100 credits; a vendor who has never bought a pack is low under 600 (SMS PRD §5.1).',
+      'Available leads, because that is the figure a vendor acts on. The rest is one sentence, and only when something is scheduled.',
+      'Badges: <b>Running low</b> when available falls below 10% of the last pack bought, never under 100 credits; a vendor who has never bought a pack is low under 600. <b>Out of credits</b> at zero (SMS PRD §5.1).',
+      '<b>Three kinds of credit, spent in one order — free → bonus → purchased.</b> <b>Free</b>: 6,000 at the first TFN approval, once per vendor, expiring 90 days after issue; free credits issued before Nov 1 (carried over from postpaid) and credits added by Shopcord are also free but never expire. <b>Bonus</b>: the extra a $100 or $200 pack adds (+5% / +10%); it never expires. <b>Purchased</b>: what the pack price bought; it never expires (SMS PRD §3).',
+      'The order is a <b>deduction rule, not a display rule</b>. The balance is one figure, and the vendor is never asked which kind is being spent.',
       'Scheduled is the screen word for a hold: held for a booked campaign, not spent, returned if the campaign is canceled (SMS PRD §3 · §4).',
     ],
     edge: [
-      '<code>Out of credits</code>, not <code>Blocked</code> — 잔액 0이어도 status = Active (SMS PRD §2), and in SMS “blocked” already means carrier filtering.',
-      '<b>No negative balance.</b> The balance stops at 0. Inbound that arrives at 0 is not charged to the vendor and its Twilio cost is the platform’s, and nothing is charged back after a top-up (SMS PRD §5.2 · §9).',
+      'Out of credits, not Blocked — 잔액 0이어도 status = Active (SMS PRD §2), and in SMS “blocked” already means carrier filtering.',
+      'No negative balance. The balance stops at 0. Inbound that arrives at 0 is not charged to the vendor, its Twilio cost is the platform’s, and nothing is charged back after a top-up (SMS PRD §5.2 · §9).',
       'PB 3.4.0 fires its alerts 각 1회, 재구매 시 리셋. The badge here is derived from the balance, so it persists while the condition holds.',
-      'Before the switch to prepaid (Nov 1, 1:00 PM PT) the SMS Credits tab is hidden and a purchase is refused. The tab appears at the switch.',
+      'Before the switch to prepaid (Nov 1, 1:00 PM PT) the SMS Credits tab is hidden and purchases are refused. The tab appears at the switch.',
     ],
-    refs: 'SMS PRD §2 · §3 · §4 · §11-A · PB 3.4.0 · PB 3.6.0' },
+    refs: 'SMS PRD §2 · §3 · §4 · §5.1 · PB 3.4.0 · PB 3.6.0' },
 
   { id: 'S5', sel: '.balance-card .section-head button', title: 'Buy credits — three ways it disappears', tags: 'DEV / PM',
     bullets: [
@@ -9504,28 +9538,28 @@ const ANNOS = [
   { id: 'S6', sel: '.rate-banner.is-free', title: 'Free credits — 6,000 at the first approval', tags: 'DEV / PM',
     bullets: [
       '6,000 free credits at the first TFN approval, once per vendor, for life (SMS PRD §3).',
-      'Free credits carried over from the postpaid plan were issued with no expiry. They expire 90 days after the switch, while new grants count 90 days from their own issue date (SMS PRD §3). The switch mail says so.',
+      'Free credits expire 90 days after issue. Free credits issued before Nov 1 (carried over from postpaid) never expire: no date on screen, no expiry mails, no Expired row.',
       '⚠ 6,000 credits is 3,000 messages — an SMS costs 2. Both places that promise the grant state the equivalent (증정 2배 오인 주의). Do not drop that line when the figure is edited.',
       'Campaigns and 1:1 chat alike (SMS PRD §3).',
       'Spent <b>first of the three</b> — free → bonus → purchased — which is why this note sits above the paid balance (SMS PRD §4).',
-      '<code>Use by {date} · N days left</code> is the in-app half of 법무’s 사전 고지 condition (§5).',
+      '<code>Use by {date} · N days left</code> is the in-app notice legal requires before free credits expire.',
     ],
     edge: [
-      '90 days is ours — SMS PRD §3 says only 발급일로부터 countdown and leaves the AC empty. It follows §5’s CPC precedent and needs writing into the spec.',
-      'The expiry alert ladder (30 / 7 / 1 days) is email-side and belongs to the SMS Settings side.',
+      'Expiry notices also go out by email, 30, 7 and 1 day before the date.',
+      'Credits added by Shopcord are free credits too, but they never expire, so they carry no date here.',
     ],
     refs: 'SMS PRD §3 · §4 · §5 · PB 3.1.0' },
 
   { id: 'S7', sel: '.bal-note.is-deadline', title: 'Canceled — the free clock does not stop', tags: 'DEV / PM',
     bullets: [
       'On cancellation the hero reads <b>credits frozen</b> — 사용만 차단, 몰수 없음, 복구 시 즉시 사용 (§5).',
-      'Free credits <b>keep expiring</b> while cancelled: resubscribe before the date and they are usable, after it they are gone. Paid credits have no clock and come back whole.',
+      'Free credits <b>keep expiring</b> while cancelled: resubscribe before the date and they are usable, after it they are gone. Paid credits have no clock and come back whole. The deadline line shows only for free credits that expire; free credits issued before Nov 1 never do.',
+      'Free credits issued before Nov 1 never expire, so instead of the deadline pair the card says <i>They stay on your account, including your {N} free credits, and become usable again the moment you resubscribe.</i> With no free credits the clause drops out.',
       'Free leads in both senses — spent first (SMS PRD §4), and the half with a deadline.',
-      'A cancelled account runs three clocks: the number held 3 months, paid credits none, free credits 발급일 + 90.',
+      'A cancelled account runs up to three clocks: the number held 3 months, paid credits none, free credits 발급일 + 90 (none for free credits issued before Nov 1).',
     ],
     edge: [
-      'No document covers this. §5 freezes credits on 정지; SMS PRD §3 starts the countdown at 발급일 and never pauses it, so the clock is a property of the grant, not of the subscription.',
-      '🔴 If the promo clock is meant to pause while cancelled, this card and the three expiry emails all change. SMS PRD §3’s AC is empty — it needs a line either way.',
+      'The free clock does not pause while cancelled (SMS PRD decision status, 10/13): it is a property of the grant, not of the subscription.',
       'SMS PRD §2 cancels scheduled campaigns on 구독취소 and releases their hold back to Available (법무 의견 대기중), so a cancelled balance has no Scheduled portion.',
     ],
     refs: '§5 · SMS PRD §2 · §3 · §4' },
@@ -9562,7 +9596,7 @@ const ANNOS = [
     bullets: [
       'Every credit that left the balance: campaign sends, 1:1 chat, test messages, expired free credits and removals by Shopcord. Columns are Date · Source · Type · Credits (Figma 775:583263).',
       'A gray <i>FREE</i> pill beside the figure marks a row paid entirely with free credits. Rows paid with purchased credits carry nothing. On the one row where free credits run out, the figure itself is underlined; hover or focus shows the free and purchased amounts, and a click pins them. Free credits are spent first (SMS PRD §4); bonus credits count as purchased.',
-      '<b>Expired</b> · Free credits from (issue date): the amount still unused on the expiry date, written on that date (SMS PRD §3 · §11-B). Type is a dash.',
+      '<b>Expired</b> · Free credits from (issue date): the amount still unused on the expiry date, written on that date (SMS PRD §3 · §11-B). Type is a dash. Free credits issued before Nov 1 never expire, so they never get this row.',
       '<b>Adjusted by Shopcord</b> · (reason label): a manual removal by an operator. The vendor sees only a fixed label: Correction, Usage correction, or Adjustment for any other reason. The operator’s own note stays internal (SMS Credits PRD §7). Type is a dash.',
       'Dates are Pacific Time. A campaign that sends across two days is one row, dated the day it started sending.',
       '<b>Test messages</b> are one row per day. One campaign reads <i>Test message · name</i>. Two or more read <i>Test messages · N campaigns</i>; hover or focus opens each campaign with its credits, and a click pins it. The card adds up to the row; past five campaigns it names four and sums the rest. A day with both kinds reads SMS · MMS and each card row names its type.',
@@ -9592,7 +9626,7 @@ const ANNOS = [
     bullets: [
       'Two rows — <code>You have</code> and <code>After this purchase</code>; the second moves with the selection.',
       'It sits above the choice, because that is what the choice is measured against.',
-      'PB 3.2.0 asks the summary step for 팩 · 금액 · 현재/구매 후 잔액 · 카드; this box is the 잔액 half and the box below is the rest.',
+      'PB 3.2.0 asks the summary step for pack · amount · balance now and after · card. The balance is this box; the pack and its price are the selected row, and the card is the <code>Charged to your default card</code> line.',
       'The campaign modal uses the same component but states the gap (<code>Short by</code>).',
     ],
     refs: 'PB 3.2.0 · SMS PRD §3' },
@@ -9611,7 +9645,6 @@ const ANNOS = [
   { id: 'S14', sel: '#pack-form .helper', title: 'The disclosure', tags: 'DEV / PM',
     bullets: [
       '<b>non-refundable</b> is mandatory on the purchase screen (PB 3.5.0 · SMS PRD §3 환불 정책 법무 확인 완료).',
-      'Figma 929:49270 is the fuller version; <i>and the campaign sends right away</i> is dropped at this entry point — there is no campaign here.',
       'The consent line names this modal’s own button, so it changes with the button.',
       'It sits directly above the foot — the last thing read before pressing.',
     ],
@@ -9629,7 +9662,7 @@ const ANNOS = [
       '<code>Cancel</code> closes the modal and charges nothing.',
       '<b>The confirmation is a toast and nothing else</b> — <i>SMS Credits Added Successfully</i>, top right, and the modal closes behind it. No success screen, no receipt shown; the receipt is the link on the new Credits Added row (Figma 2776:501570).',
       'Title only. The Sonner’s description slot is hidden in this design, so unlike every other toast in the product this one carries no second line.',
-      'With no card on file the purchase flow raises the card form first (§3), so this button is never pressed against an empty card slot.',
+      'With no default card, the card line reads <i>Add a default payment card in Subscription to buy credits.</i> with a <code>Go to Subscription</code> link that opens the Subscription tab, and <code>Buy {n} credits</code> is disabled.',
     ],
     edge: [
       '🔴 <b>A declined purchase has no specified behaviour.</b> §5.1 covers the subscription charge only and PB 3.2.0 ends at 적립. Decide whether it shows an inline error in this modal, the way the card widget does (PB 1.1.2), or routes somewhere else.',
@@ -9666,21 +9699,23 @@ const ANNOS = [
 
   { id: 'S26', group: true, sel: '[data-modal="sendBlocked"] .modal-confirm', title: 'Credits ran out mid-compose — the blocker', tags: 'DEV / PM',
     bullets: [
-      'The campaign screen is painted once and cannot know the balance moved: an inbound chat can spend the rest while the vendor writes, so the cost line still reads affordable and Send stays enabled.',
-      'Send re-reads the balance at click time and raises this instead of failing. 🔴 The same check must run server-side at send — the client figure is always a snapshot.',
-      'Two steps: one sentence first — it did not send, nothing is lost — then <code>Buy credits</code> opens the pack form (S15).',
-      'It uses the confirmation shape (Figma 1:22320) but confirms nothing, which is why pin 14 is scoped off it.',
-      'It does not repeat the shortfall figure; that is the next modal’s summary box.',
+      'Credits can run out while the vendor is writing: an incoming message or another send can use the rest of the balance, so the screen still looks affordable and Send stays enabled.',
+      'Send re-checks the balance when pressed. If there are not enough credits, nothing is sent and this short modal opens instead: <i>Your credits ran out while you were writing</i> — nothing has been sent, the campaign is exactly as it was left.',
+      'Two buttons. <code>Cancel</code> closes it and returns to the campaign with the draft intact. <code>Buy credits</code> opens the purchase modal with the shortfall shown at the top.',
+      'On Nov 1 the purchase only adds credits; the vendor presses Send again. Buying and sending in one step comes in the release after the switch.',
+      'In Chat, Send is refused the same way; at 0 the composer is replaced by the out-of-credits notice, whose Buy credits opens the same purchase modal. 1:1 Chat only buys.',
+      '🔴 The same check must also run on the server at send time; the screen’s figure is always a snapshot.',
     ],
     edge: [
-      'The draft must survive — <code>Cancel</code> returns to the composer intact. ⚠ In this mockup the panel switches scenarios instead.',
+      'It does not repeat the shortfall figure; that is the purchase modal’s summary box.',
+      '⚠ In this mockup the panel switches scenarios instead of returning to the draft.',
     ],
     refs: 'SMS PRD §4 · §5.1 · Figma 1:22320' },
 
   { id: 'S17', group: true, sel: '.uc-wrap', title: 'Credits card — the popover behind the chip', tags: 'DEV',
     bullets: [
       'Opens with <code>Current balance</code> and ends with <code>Available to use</code> in its own box (Figma 829:791924).',
-      'Rows appear only when they have something to say: <code>Scheduled</code> only when something is reserved, <code>Free credits</code> / <code>Purchased credits</code> only when a grant exists.',
+      'Three shapes. <b>Purchased only</b>: Current balance, Scheduled (only when something is scheduled) and Available — no breakdown. <b>Free only</b>: no figures under the balance, since each would repeat it; one line instead, <i>Free credits · expire {date}</i> — or just <i>Free credits</i> when they never expire (issued before Nov 1, or added by Shopcord). <b>Free and purchased</b>: the two rows <code>Free credits</code> (with <i>Used first · expires {date}</i>) and <code>Purchased credits</code>, which add up to Current balance. Free credits come once per vendor, so the pair is a short-lived state.',
       'The free/purchased pair sits directly under <code>Current balance</code> — a breakdown of that figure, not a term in the subtraction. Both halves are listed, so they add up to the row above.',
       '⚠ <b>Two rows will not stay two.</b> Bonus is already a third kind with its own place in the spending order, and 구독 크레딧 is planned — so this is a list of kinds, not a free/paid pair, and the model behind it needs a kind enum rather than a boolean.',
       'The two parts are indented and one step down in size and colour; the figure column does not move.',
@@ -9696,59 +9731,61 @@ const ANNOS = [
 
   { id: 'S18', group: true, sel: '.credit-chip-btn', title: 'Credit chip — the balance on the SMS screens', tags: 'DEV',
     bullets: [
-      'Always visible on Campaign, Chat and the dashboard (SMS PRD §2). One builder — <code>creditChip()</code> — so the three cannot drift apart.',
-      'Free credits count: the figure is Available, so a vendor holding only the grant sees a real balance. The popover breaks the two apart (S17).',
-      'The number is a button: <b>pressing it opens the breakdown popover</b> (S17), pressing it again closes it. It does not navigate.',
+      'Always visible on Campaign, Chat and the dashboard (SMS PRD §2). One shared component, so the three cannot drift apart.',
+      'When credits run low, the chip (<i>Available: 1,080 credits</i>) turns amber: available is under 10% of the last pack bought or under 100 credits. A vendor who has never bought a pack turns amber under 600.',
+      'Free credits count: the figure is Available, so a vendor holding only free credits sees a real balance. The popover behind the chip breaks free and purchased apart.',
+      'The figure is a button: pressing it opens the credits popover, pressing it again closes it. It does not navigate.',
       'Three colour states, one text: enough — default · running low — amber · out of credits — red. The wording stays <code>Available: nnn credits</code>, so colour is the only signal.',
       'It uses the balance card’s own amber and red. The accent pink belongs to the active tab and primary actions, never to a status.',
-      'The threshold comes from <code>lowThreshold()</code>, the same function the pill calls.',
+      'The chip and the balance card’s Running low badge use the same rule, so they always change together.',
     ],
     edge: [
       '⚠ The chip’s paddings are screenshot approximations — re-measure against Figma 829:47631 before dev takes the spacing from this.',
     ],
-    refs: 'SMS PRD §2 · Figma 823:352793 · 829:47631' },
+    refs: 'SMS PRD §2 · §5.1 · Figma 823:352793 · 829:47631' },
 
   { id: 'S27', group: true, sel: '.free-strip', title: 'Free SMS Credit strip — the grant on the dashboard', tags: 'DEV / PM',
     bullets: [
-      'SMS Marketing dashboard only, and only while some of the grant is left (<code>free &gt; 0</code>). It is not rendered at zero, so it never reads <code>6,000 / 6,000 used</code>.',
-      'It measures the <b>grant</b>, not the balance: 6,000 issued once, never topped up, spent first (SMS PRD §3 · §4). A fixed allowance has a denominator, which is why a bar works here and nowhere else — the paid balance has none.',
-      'Both numbers are <b>credits, never messages</b>. The grant is 6,000 credits = 3,000 messages, and a bar counting messages under a heading counting credits is the 증정 2배 오인 the spec warns about (SMS PRD §3).',
-      '<code>used</code> is derived — <code>issued − free</code> — so the bar and the sentence cannot disagree.',
-      '<code>Use by {date} · N days left</code> is the in-app half of 법무\u2019s 사전 고지 condition (§5), the same line the balance card carries (S6).',
-      'Green, not amber: it is not a warning. Running low has its own colour and the credit chip above carries it (S18 · S25).',
+      'While free credits remain, the strip shows their expiry date and days left: <code>Use by {date} · N days left</code>.',
+      'SMS Marketing dashboard only, and only while some free credits are left. It is not shown at zero, so it never reads <code>6,000 / 6,000 used</code>.',
+      'The bar measures <b>free credits, not the balance</b>: used / received. Received is every free credit the vendor was given: the 6,000 grant at the first TFN approval, or the free credits carried over from the postpaid plan. Free credits are spent first, so the bar moves with each send until they run out (SMS PRD §3 · §4).',
+      'Both numbers are <b>credits, never messages</b>. 6,000 credits = 3,000 messages; counting messages here would read as twice the gift (SMS PRD §3).',
+      '<code>used</code> = received − free credits left, so the bar and the sentence always agree.',
+      '<code>Use by {date} · N days left</code>: free credits expire 90 days after issue, and this is the in-app notice legal requires before expiry. Free credits issued before Nov 1 never expire, so the line is not shown for them.',
+      'Green, not amber: the strip is not a warning.',
+      '<b>Running low with free credits only</b> (under 600): no badge and no extra notice. The credit chip above turns amber, and the strip keeps showing the expiry date and days left.',
     ],
     edge: [
-      'The paid balance is not in this strip at all — the chip above carries Available (S18).',
-      'Figma 829:47631 does not draw this strip. It is here because the grant is a fixed allowance; nothing measures the paid balance with a bar.',
-      '⚠ The info icon has no behaviour. Decide what it opens — the grant\u2019s terms are the obvious target — or drop it.',
+      'The paid balance is not in this strip; the credit chip above shows Available.',
+      '⚠ The info icon has no behaviour yet. Decide what it opens (the free-credit terms) or remove it.',
     ],
-    refs: 'SMS PRD §3 · §4 · §5 · PB 3.3.0' },
+    refs: 'SMS PRD §3 · §4 · §5.1 · PB 3.3.0' },
 
   { id: 'S19', group: true, sel: '.chat-grid', title: 'SMS Chat — two credit states', tags: 'DEV / PM',
     bullets: [
       'Figma 942:92352 — the credit state on it is ours.',
-      'Two states, not three. Healthy — composer live, estimate in its foot. 가용 0 — the composer is replaced (S20).',
-      '🔴 No inbound grace: at 가용 0 the vendor cannot send. Inbound is not charged and is stored hidden: it never enters the thread, its content is never shown, even after a top-up, and only the not-received line marks it (S31). Do not build a grace window.',
-      'The buyer is told immediately — the 발신전용 auto-reply fires the moment available hits 0 (SMS PRD §5.2).',
-      'That auto-reply is the <b>zero-balance</b> state only. After a cancellation the number is suspended instead, and a suspended number cannot reply at all (S2).',
-      '<b>Inbound is deducted one message at a time</b>, before the message enters the conversation (pre-action). Twilio’s Usage API is used only for the daily reconciliation. Send still re-reads the balance at click time and the same check runs server-side (S21 · S26).',
-      'A chat message that fails after Twilio accepts it (e.g. error 21610) stays charged, as campaign sends do.',
-      'The send-only auto-reply also goes out when the vendor has no contact details, with this fallback: <i>This number is send-only and cannot receive replies. Please contact the vendor directly for assistance.</i>',
+      'Two states, not three. Healthy — composer live, estimate in its foot. 가용 0 — the composer is replaced by a notice with Buy credits.',
+      '🔴 No inbound grace: at 가용 0 the vendor cannot send. Inbound is not charged and is stored hidden: it never enters the thread, its content is never shown, even after a top-up. Do not build a grace window.',
+      'Where messages were missed, the thread shows one gray line instead: <i>N messages not received while you were out of SMS credits · first at {time}</i>. It is the last thing in the thread and has no button.',
+      'The buyer is told immediately — the 발신전용 auto-reply fires the moment available hits 0 (SMS PRD §5.2). If the vendor has no contact details, the fallback is sent: <i>This number is send-only and cannot receive replies. Please contact the vendor directly for assistance.</i>',
       'Outbound chat is gated on 가용 잔액 > 0 (SMS PRD §4).',
+      'Inbound is deducted one message at a time, before it enters the conversation; Twilio’s Usage API is used only for the daily reconciliation.',
+      'A chat message that fails after Twilio accepts it (e.g. error 21610) stays charged.',
       'A vendor at zero still reaches Chat and reads the thread (SMS PRD §2).',
     ],
     edge: [
-      'The 4 hours left in the spec is the Queued-callback auto-deduct timeout (§4 · §5.1). It is not a grace window.',
+      'The 4 hours in the spec is only the Queued-callback auto-deduct timeout (§5.1). It is not a grace window.',
     ],
-    refs: 'SMS PRD §2 · §4 · §5.1 · §5.2 · §11-D · Figma 942:92352' },
+    refs: 'SMS PRD §2 · §4 · §5.1 · §5.2 · Figma 942:92352' },
 
   { id: 'S31', sel: '.missed-line', title: 'Messages not received', tags: 'DEV / PM',
     bullets: [
       'Buyer messages that arrive while the vendor is out of credits or inactive are not added to the thread. Their content is never shown, and nothing is blurred.',
       'One divider line marks the gap: how many messages, why, and when the first one arrived. Consecutive missed messages with nothing between them are one line.',
-      'Two wordings: <i>N messages not received while you were out of SMS credits</i> and <i>N messages not received while your subscription was inactive</i>. One message reads <i>1 message not received</i>.',
-      'The line has no button or link. While credits are zero the composer notice below owns Buy credits (S20), and buying later does not bring these messages back.',
+      'Two wordings: <i>N messages not received while you were out of SMS credits · first at {time}</i> and <i>N messages not received while your subscription was inactive · first at {time}</i>. One message reads <i>1 message not received</i>.',
+      'The line has no button or link. While credits are zero, the out-of-credits notice that replaces the composer owns Buy credits, and buying later does not bring these messages back.',
       'Nothing a buyer sent in that period is shown, before or after the vendor pays: the line is all that remains of it. It stays in the thread after a top-up or a resubscribe. Master and sub accounts see the same line.',
+      'For inactive vendors this starts at the switch (Nov 1, 1:00 PM PT); messages received before it are not hidden retroactively.',
     ],
     refs: 'SMS PRD §5.2' },
 
@@ -9832,17 +9869,19 @@ const ANNOS = [
 
   { id: 'S23', group: true, sel: '[data-banner="credits"]', title: 'Out of credits — the top-up banner', tags: 'DEV / PM',
     bullets: [
-      'Renders on the SMS Credits tab, the campaign screen, the dashboard and Chat (SMS PRD §2).',
-      'The <code>Buy credits</code> button on the balance card is not rendered at zero — this banner carries the same control, and pressing it opens the same purchase modal (S28).',
+      'Renders when available credits reach 0, on the SMS Credits tab, the campaign screen, the dashboard and Chat (SMS PRD §2).',
+      'Copy: <i>You’re out of credits — messages have stopped both ways</i> / <i>Campaigns and 1:1 chat replies won’t send, and buyer messages aren’t reaching you — they are not saved. Buy credits to start again.</i>',
       'One state, one sentence: 가용 0 is a single state and the banner states both halves unconditionally.',
-      'Master only — a sub account cannot top up (SMS PRD §2).',
+      '<code>Buy SMS credits</code> opens the purchase modal. The balance card’s own Buy button is not rendered at zero, so this is the one Buy control on the screen.',
+      'Sub accounts see the same banner without the button; they ask the Master account to buy (SMS PRD §2).',
       '잔액 0이어도 status = Active. This is a send gate, not a suspension, and no copy here may imply otherwise (SMS PRD §2).',
     ],
     edge: [
-      'The banner is the third use beside §16’s payout onboarding and payment failure, and all three are kept.',
-      'Nothing here may promise that anything arriving at zero is kept.',
+      'This banner is the third use beside §16’s payout onboarding and payment failure; all three are kept.',
+      '“They are not saved”: buyer messages that arrive at 0 are stored hidden and their content is never shown, even after a top-up (SMS PRD §5.2).',
+      'No negative balance: the balance stops at 0, and inbound arriving at 0 is not charged to the vendor; the platform absorbs the cost (SMS PRD §9).',
     ],
-    refs: 'SMS PRD §2 · §5.2 · §11-D · PB 3.4.0 · §16' },
+    refs: 'SMS PRD §2 · §5.2 · §9 · §16' },
 
   { id: 'S24', group: true, sel: '[data-banner="schedCanceled"]', title: 'Scheduled campaigns were canceled', tags: 'DEV / PM',
     bullets: [
@@ -10088,12 +10127,13 @@ const ANNOS = [
       '재구독 is a condition, not a status, so it sits in its own block: new cycle, immediate first charge, no second trial (§3.2.2 ⑦ · §5.5.3).',
       'CTA is <code>Subscribe again</code>, the same words as the Subscription tab button.',
       'Held credits are pre-deduction, so a scheduled campaign’s hold releases back to Available (선불 스펙 — Hold 해제, 차감 전이므로 환불 아님).',
+      'When free credits remain, the credits line adds <i>Free credits still expire on {date}.</i> They keep expiring while the subscription is canceled; the number reminders carry the same line.',
     ],
     edge: [
       'The manual-cancel mail has a PB entry in the subscription Figma; PB 7.1.2 covers the D+7 automatic one.',
       'Two entries, one template: <i>with SMS number</i> and <i>no SMS number</i>. Production sends one, picked by whether the vendor ever onboarded SMS.',
       'No number means no SMS anywhere in the mail — the credits line and the number block drop out, and the locked-feature line names only order opening/confirming.',
-      'The number is <b>held until</b> a date, never <b>deleted on</b> one: no PRD carries the rule and we cannot promise a carrier will keep it.',
+      'The mail says the number is reserved until a date and may be released after it. The policy is deletion after 3 months, by hand in the MVP (SMS PRD decision status, 10/7); the mail does not promise the same number back.',
       'Once the hold ends, SMS Campaigns and Chat history is gone from the vendor’s account, and the mail says so from the vendor’s side. The backend keeps the history for internal use, so nothing here promises deletion.',
     ],
     refs: '§3.5 · §5.5.2 · §5.5.3 · §3.2.1' },
@@ -10110,7 +10150,7 @@ const ANNOS = [
       '🔴 No PB id. The 3-month rule itself is confirmed.',
       'Only for vendors who hold a number.',
     ],
-    refs: '§3.5 · NUMBER_HOLD_MONTHS' },
+    refs: '§3.5 · SMS PRD decision status (3-month hold)' },
 
   { id: 'M-numberD7', sel: '.email-modal[data-email="numberD7"] .em-card', title: 'Reserved number — 7 days left', tags: 'DEV',
     bullets: [
@@ -10120,7 +10160,7 @@ const ANNOS = [
     edge: [
       '🔴 No PB id.',
     ],
-    refs: '§3.5 · NUMBER_HOLD_MONTHS' },
+    refs: '§3.5 · SMS PRD decision status (3-month hold)' },
 
   { id: 'M-numberD1', sel: '.email-modal[data-email="numberD1"] .em-card', title: 'Reserved number — released tomorrow', tags: 'DEV / PM',
     bullets: [
@@ -10131,7 +10171,7 @@ const ANNOS = [
       '🔴 No PB id.',
       'Nothing follows this. There is no “your number was released” mail — worth deciding whether one is owed.',
     ],
-    refs: '§3.5 · NUMBER_HOLD_MONTHS' },
+    refs: '§3.5 · SMS PRD decision status (3-month hold)' },
 
   { id: 'M-receipt', sel: '.email-modal[data-email="receiptAuto"] .em-card, .email-modal[data-email="receipt"] .em-card', title: 'Receipt', tags: 'DEV / PM',
     bullets: [

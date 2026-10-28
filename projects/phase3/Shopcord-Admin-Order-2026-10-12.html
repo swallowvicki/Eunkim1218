@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script>/* 사이드바 롤백 스위치 — false 면 예전 사이드바 */ var SIDEBAR_APP = true; if (SIDEBAR_APP) document.documentElement.setAttribute("data-sidebar", "new");</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shopcord — Vendor Admin Orders</title>
@@ -132,6 +134,14 @@
   .disc input { width: 72px; }
   .disc .u { height: 36px; display: inline-flex; align-items: center; gap: 4px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
   .disc .u svg { width: 12px; height: 12px; color: var(--fg-2); }
+  /* 10-28 정액($) 할인 — 최대 = 그 줄 변형 중 가장 낮은 값(/pc). 넘으면 AS-IS 처럼 빨간 테두리 + 밑에 Max $N */
+  .disc { position: relative; }
+  button.u { background: #fff; color: var(--fg); font: inherit; cursor: pointer; }
+  .disc input.err { border-color: var(--red); color: var(--red); }
+  .dmax { margin-top: 4px; font-size: 12px; line-height: 16px; color: var(--red); }
+  .umenu { position: absolute; top: 40px; right: 0; z-index: 20; min-width: 64px; padding: 4px; background: #fff; border: 1px solid var(--line-2); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+  .umenu button { display: block; width: 100%; height: 30px; padding: 0 10px; border: 0; border-radius: 6px; background: none; font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+  .umenu button:hover, .umenu button.on { background: var(--muted); }
   .pr { white-space: nowrap; }
   .pr b { font-weight: 400; color: var(--red); }
   .pr s { margin-left: 4px; font-size: 12px; color: var(--fg-3); }
@@ -172,11 +182,70 @@
   .demo-ctl-item.is-current { background: #f7eef2; color: #9d4862; font-weight: 600; }
   .demo-ctl-item small { display: block; font-size: 11px; color: #a3a3a3; font-weight: 400; }
   .demo-ctl-check { width: 14px; flex-shrink: 0; color: #e21d76; }
+
+  /* ══ 사이드바 = 실제 앱(Customers 화면 캡처 · cord-demo ShopcordSidebar.tsx) (2026-10-19 "왼쪽 메뉴를 오른쪽 커스토머페이지의 메뉴처럼 맞춰줘")
+     Dashboard · Item · Linesheet · Orders | Customers | SMS Campaigns · SMS Chat, 접기 버튼, My Account. 알림 점은 안 넣음.
+     되돌리려면 head 의 SIDEBAR_APP = false (예전 사이드바가 다시 보임) · 백업 …backup-before-sidebar.html */
+  html[data-sidebar="new"] .sb-old { display: none !important; }
+  html:not([data-sidebar="new"]) .sb-new { display: none !important; }
+  .scb { position: relative; height: 100%; display: flex; flex-direction: column; background: #fefefd; border: 1px solid #f2ede7; border-radius: 10px; font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; box-sizing: border-box; }
+  .scb *, .scb *::before, .scb *::after { box-sizing: border-box; }
+  .scb-brand { display: flex; align-items: center; gap: 8px; padding: 24px 12px 20px 24px; }
+  .scb-brand svg { flex-shrink: 0; }
+  .scb-collapse { position: absolute; right: -14px; top: 22px; width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 1px solid #ececec; background: #fff; color: #6b6b6b; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.05); z-index: 2; }
+  .scb-collapse svg { width: 14px; height: 14px; }
+  .scb-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
+  .scb-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; font-size: 14px; line-height: 20px; font-weight: 500; color: #6b6b6b; text-decoration: none; cursor: pointer; }
+  .scb-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .scb-item:hover { background: rgba(0,0,0,.03); }
+  .scb-item.is-on { background: rgba(253,242,248,.6); color: #e11d74; font-weight: 600; }
+  .scb-sep { height: 1px; margin: 6px 8px; background: #f2ede7; }
+  .scb-acct { display: flex; align-items: center; gap: 10px; width: auto; margin: 0 12px; padding: 10px 2px; border: 0; border-top: 1px solid #f2ede7; border-radius: 0 0 10px 10px; background: none; font: inherit; text-align: left; cursor: pointer; }
+  .scb-acct:hover { background: rgba(0,0,0,.03); }
+  .scb-av { width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: #e11d74; color: #fff; display: inline-flex; align-items: center; justify-content: center; }
+  .scb-av svg { width: 16px; height: 16px; }
+  .scb-acct b { flex: 1; font-size: 14px; font-weight: 700; color: #1f1f1f; }
+  .scb-acct > svg { width: 16px; height: 16px; color: #a3a3a3; }
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="side">
+  <aside class="sb-new" style="width:256px;flex-shrink:0;position:sticky;top:16px;height:calc(100vh - 32px)">
+  <div class="scb">
+    <div class="scb-brand"><svg width="17" height="22" viewBox="0 0 16.5221 21.6574" fill="none" >
+        <path d="M16.3394 12.7537L10.8993 7.97016H14.6165C15.2208 7.97016 15.7108 7.4845 15.7108 6.88559V1.08475C15.7108 0.485835 15.2208 0.000178457 14.6165 0.000178457H3.48262C3.17881 0.000178457 2.95995 0.196868 2.88469 0.438306L0.0746318 8.29756C-0.0508721 8.53242 -0.027914 8.84364 0.211104 9.05373L5.48099 13.6876H1.38426C0.779953 13.6876 0.289927 14.1732 0.289927 14.7721V20.5732C0.289927 21.1721 0.779953 21.6578 1.38426 21.6578H13.0275C13.3201 21.6578 13.527 21.4601 13.587 21.2242L16.4608 13.3983C16.5646 13.1969 16.5429 12.9329 16.3394 12.7539V12.7537Z" fill="#FFF2F5" />
+        <path d="M15.9818 13.688H5.48153L13.4102 20.6599C13.588 20.8162 13.636 21.0328 13.5872 21.2244L16.4611 13.3986C16.3756 13.5644 16.2055 13.688 15.9818 13.688Z" fill="#FDF2F8" />
+        <path d="M16.3394 12.754L10.8994 7.97052H0.626469C0.370614 7.97052 0.175216 8.10982 0.0749658 8.29792C-0.050538 8.53278 -0.02758 8.84399 0.211439 9.05408L5.48133 13.6879H15.9818C16.2055 13.6879 16.3757 13.5643 16.4611 13.3985C16.5649 13.197 16.5433 12.933 16.3397 12.754H16.3394Z" fill="#BE185D" />
+        <path d="M13.4104 20.6599L5.48168 13.688H1.3847C0.780391 13.688 0.290365 14.1736 0.290365 14.7726V20.5737C0.290365 21.1726 0.780391 21.6582 1.3847 21.6582H13.028C13.3206 21.6582 13.5274 21.4605 13.5874 21.2247C13.6361 21.033 13.5882 20.8164 13.4104 20.6601V20.6599Z" fill="#E11D74" />
+        <path d="M0.626607 7.97037H10.8996L3.06781 1.08395C2.86476 0.905461 2.81757 0.654163 2.88491 0.438512L0.0748494 8.29776C0.175355 8.10967 0.370753 7.97037 0.626352 7.97037H0.626607Z" fill="#FBCFE8" />
+      </svg><svg width="103" height="22" viewBox="0 0 103.308 21.5535" fill="none" >
+        <path d="M4.94994 16.9198C1.97059 16.9198 0.0469189 15.3285 0 13.1053H3.472C3.49546 13.7137 3.94119 14.0179 4.90302 14.0179C5.98216 14.0179 6.33405 13.6435 6.33405 13.1521C6.33405 12.3798 5.48951 12.3096 4.41037 12.1458C2.81513 11.9117 0.187675 11.5139 0.187675 8.72903C0.187675 6.38881 2.04097 4.75065 4.92648 4.75065C7.81199 4.75065 9.59491 6.41221 9.66529 8.49501H6.24021C6.14637 7.95676 5.67718 7.65253 4.9734 7.65253C4.1054 7.65253 3.75351 8.09717 3.75351 8.56522C3.75351 9.26728 4.59805 9.36089 5.67718 9.52471C7.3428 9.75873 9.89988 10.2034 9.89988 12.9414C9.89988 15.3285 7.92929 16.9198 4.94994 16.9198Z" fill="#1F1F1F" />
+        <path d="M11.8433 16.6156V0H15.3622V6.2952C16.066 5.2889 17.0513 4.75065 18.2477 4.75065C20.6875 4.75065 23.2915 6.38881 23.2915 10.6246V16.6156H19.7726V10.6246C19.7726 8.79924 18.8811 8.02697 17.5674 8.02697C16.3006 8.02697 15.3622 8.84604 15.3622 10.6246V16.6156H11.8433Z" fill="#1F1F1F" />
+        <path d="M31.0785 16.9198C27.4188 16.9198 24.8383 14.3456 24.8383 10.8352C24.8383 7.3249 27.4188 4.75065 31.0785 4.75065C34.7382 4.75065 37.3187 7.3249 37.3187 10.8352C37.3187 14.3456 34.7382 16.9198 31.0785 16.9198ZM31.0785 13.6435C32.6737 13.6435 33.7529 12.4968 33.7529 10.8352C33.7529 9.17367 32.6737 8.02697 31.0785 8.02697C29.4832 8.02697 28.4041 9.17367 28.4041 10.8352C28.4041 12.4968 29.4832 13.6435 31.0785 13.6435Z" fill="#1F1F1F" />
+        <path d="M38.8721 21.5535V10.9522C38.8721 7.06747 41.4995 4.75065 45.0419 4.75065C48.725 4.75065 51.3056 7.25469 51.3056 10.9756C51.3056 15.0008 48.3028 16.9198 45.6753 16.9198C44.2912 16.9198 43.1182 16.3816 42.391 15.3519V21.5535H38.8721ZM45.0654 13.6435C46.6606 13.6435 47.7397 12.4968 47.7397 10.8352C47.7397 9.17367 46.6606 8.02697 45.0654 8.02697C43.4701 8.02697 42.391 9.17367 42.391 10.8352C42.391 12.4968 43.4701 13.6435 45.0654 13.6435Z" fill="#1F1F1F" />
+        <path d="M58.643 16.9198C54.9833 16.9198 52.4028 14.3456 52.4028 10.8352C52.4028 7.3249 54.9833 4.75065 58.643 4.75065C61.8569 4.75065 64.2029 6.73984 64.6955 9.59491H61.1297C60.7309 8.63542 59.816 8.02697 58.643 8.02697C57.0478 8.02697 55.9686 9.17367 55.9686 10.8352C55.9686 12.4968 57.0478 13.6435 58.643 13.6435C59.816 13.6435 60.7309 13.035 61.1297 12.0756H64.6955C64.2029 14.9306 61.8569 16.9198 58.643 16.9198Z" fill="#FB4294" />
+        <path d="M71.9785 16.9198C68.3188 16.9198 65.7383 14.3456 65.7383 10.8352C65.7383 7.3249 68.3188 4.75065 71.9785 4.75065C75.6382 4.75065 78.2187 7.3249 78.2187 10.8352C78.2187 14.3456 75.6382 16.9198 71.9785 16.9198ZM71.9785 13.6435C73.5738 13.6435 74.6529 12.4968 74.6529 10.8352C74.6529 9.17367 73.5738 8.02697 71.9785 8.02697C70.3833 8.02697 69.3041 9.17367 69.3041 10.8352C69.3041 12.4968 70.3833 13.6435 71.9785 13.6435Z" fill="#FB4294" />
+        <path d="M79.7721 16.6156V10.0396C79.7721 6.43561 81.8835 4.75065 84.9801 4.75065C88.0768 4.75065 90.1646 6.41221 90.1881 10.063V10.1332H86.6692V10.0396C86.6692 8.49501 85.9654 8.02697 84.9801 8.02697C83.9948 8.02697 83.291 8.49501 83.291 10.0396V16.6156H79.7721Z" fill="#FB4294" />
+        <path d="M97.1381 16.9198C93.455 16.9198 90.8744 14.4158 90.8744 10.6948C90.8744 6.66964 93.8772 4.75065 96.5047 4.75065C97.8888 4.75065 99.0617 5.2889 99.789 6.3186V0H103.308V10.7182C103.308 14.603 100.68 16.9198 97.1381 16.9198ZM97.1146 13.6435C98.7099 13.6435 99.789 12.4968 99.789 10.8352C99.789 9.17367 98.7099 8.02697 97.1146 8.02697C95.5194 8.02697 94.4402 9.17367 94.4402 10.8352C94.4402 12.4968 95.5194 13.6435 97.1146 13.6435Z" fill="#FB4294" />
+        <rect x="54.7532" y="0" width="7.23155" height="2.06616" rx="0.332061" fill="#E11D74" />
+      </svg></div>
+    <button type="button" class="scb-collapse" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5L5.5 8l4.5 4.5"/></svg></button>
+    <nav class="scb-nav">
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Dashboard</a>
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5l5.5 3v7L8 14.5 2.5 11.5v-7L8 1.5z"/><path d="M2.5 4.5L8 7.5l5.5-3"/><path d="M8 14.5V7.5"/></svg>Item</a>
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M2 6h12"/><path d="M5 2v12"/></svg>Linesheet</a>
+      <a class="scb-item is-on" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h10l-1 8H4L3 4z"/><path d="M5.5 4V2.5h5V4"/></svg>Orders</a>
+      <div class="scb-sep"></div>
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5.5" r="2.5"/><path d="M2 13.5c.5-2.4 2-3.5 4-3.5s3.5 1.1 4 3.5"/><circle cx="12" cy="6" r="2"/><path d="M11 10.5c1.7 0 3 1 3.5 3"/></svg>Customers</a>
+      <div class="scb-sep"></div>
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5l5 1V11l-5 1z"/><path d="M7 6.5l6-3v9l-6-3"/><path d="M11 13.5v1.5"/></svg>SMS Campaigns</a>
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3h11a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H8L5 13.5V11H2.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>SMS Chat</a>
+      <div class="scb-sep"></div>
+    </nav>
+    <button type="button" class="scb-acct"><span class="scb-av"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.5" r="2.5"/><path d="M3.5 13.5c.6-2.6 2.3-3.8 4.5-3.8s3.9 1.2 4.5 3.8"/></svg></span><b>My Account</b><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
+  </div>
+  </aside>
+  <aside class="side sb-old">
     <div class="logo"><i></i><span>shop<b>cord</b></span></div>
     <nav class="nav" id="sideNav"></nav>
     <div class="acct"><span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="5.5" r="2.5"/><path d="M3 14a5 5 0 0 1 10 0"/></svg></span>My Account<em>›</em></div>
@@ -196,7 +265,42 @@
   var OWN = { 'Burgundy Velvet': P(23.50, 21.50, 20.50, 49.00), 'Rainbow Tie-Dye': P(22.50, 19.50, 18.50, 48.00), 'Ruby Red Sequin': P(25.00, 23.00, 22.00, 55.00) };
   var BYSIZE = { 'Heathered Olive': { S: P(20.00, 18.00, 17.00, 42.00), L: P(23.00, 21.00, 20.00, 48.00) } };
   var SHIP = '04/20/2027';   /* 흐름 숫자 맞추기 (2026-10-12 "모든 숫자를 플로우에 맞게 다 맞춰야돼") — 어드민 Item 데모 Pre Order 04/20/2027 과 같은 날 */
+  /* ══ 최악의 데이터 (2026-10-15 "Cart와 Order List, Order Detail도 최악의 데이터가 필요해보여" · "2048개가 된 케이스가 필요해")
+     바이어 PDP · 카트 · 오더와 같은 생성 규칙 · 같은 수량: 32색 × 64사이즈 = 2048 변형, 이름 전부 15자, 팩 86 pcs,
+     가격 일부 다름, 날짜 In Stock · 04/20/2027 · 05/15/2027 · 06/01/2027 섞임. 톱니 메뉴 「DATA → 최악의 데이터」.
+     In Stock 줄은 날짜가 없어 `In Stock` 묶음으로(Figma 에 없는 이름 — 확인 필요), 날짜 칸은 `—` */
+  var WORST = false;
+  var WORST_N = 64, WORST_C = 32;
+  var WORST_COLOR_NAMES = COLORS30.concat(['Olive Drab Knit', 'Mint Green Lawn']);
+  for (var wc = 1; WORST_COLOR_NAMES.length < WORST_C; wc++) WORST_COLOR_NAMES.push('Swatch No. ' + ('000' + wc).slice(-4));
+  WORST_COLOR_NAMES = WORST_COLOR_NAMES.slice(0, WORST_C);
+  var WORST_SIZES = [];
+  for (var wi = 0; WORST_SIZES.length < WORST_N; wi++) [30, 32].forEach(function (len) { if (WORST_SIZES.length < WORST_N) WORST_SIZES.push('Waist ' + (24 + wi) + ' / L ' + len); });
+  var WORST_RATIO = {};
+  WORST_SIZES.forEach(function (sz, j) { WORST_RATIO[sz] = j % 3 === 0 ? 2 : 1; });
+  var WORST_DATES = ['04/20/2027', '05/15/2027', '06/01/2027'];
+  function worstDress(method) {
+    var qty = {};
+    WORST_COLOR_NAMES.forEach(function (n, i) {
+      if (method === 'pre') { if (i < 3) qty[n] = i + 1; }
+      else if (i < 2) { qty[n] = {}; WORST_SIZES.slice(0, 6).forEach(function (sz, j) { qty[n][sz] = (j % 3) + 1; }); }
+    });
+    return { name: 'Relaxed Linen Dress', style: 'FG-SS25-999', method: method, sizes: WORST_SIZES.slice(), ratio: WORST_RATIO,
+      colors: WORST_COLOR_NAMES.map(function (n, i) {
+        var by = {}, ship = {};
+        WORST_SIZES.forEach(function (sz, j) {
+          var ws = 20 + (i % 5) + (j % 6) * 0.5, sale = (i + j) % 4 === 0 ? ws : ws - 1.5 - (j % 2) * 0.5;
+          by[sz] = P(+ws.toFixed(2), +sale.toFixed(2), +(sale - 0.75).toFixed(2), 42 + (j % 6) * 2 + (i % 3));
+          var k = (i + j) % 4; ship[sz] = k ? WORST_DATES[k - 1] : 'in';
+        });
+        return { name: n, price: by[WORST_SIZES[0]], bySize: by, ship: ship, packShip: i % 4 ? WORST_DATES[i % 4 - 1] : 'in' };
+      }),
+      qty: qty };
+  }
+  function shipD(c, s) { var d = c.ship && c.ship[s]; return d === 'in' ? '' : (d || SHIP); }
+  function packD(c) { return c.packShip === 'in' ? '' : (c.packShip || SHIP); }
   function dress(method) {
+    if (WORST) return worstDress(method);
     return { name: 'Relaxed Linen Dress', style: 'FG-SS25-999', method: method, sizes: ['S', 'M', 'L'], ratio: { S: 2, M: 2, L: 2 },
       colors: COLORS30.map(function (n) { return { name: n, price: OWN[n] || BASE, bySize: BYSIZE[n] }; }),
       qty: method === 'pre' ? { 'Heathered Olive': 2, 'Burgundy Velvet': 1, 'Rainbow Tie-Dye': 1 }
@@ -218,15 +322,27 @@
 
   /* 오더 줄 — 변형 하나(Open Pack: 컬러 × 사이즈) 또는 팩 하나(Pre Pack: 컬러). 값은 바이어가 산 세일가, 취소선은 WS */
   var ROWS = [];
-  ITEMS.forEach(function (it, i) {
-    Object.keys(it.qty).forEach(function (n) {
-      var c = color(it, n);
-      if (it.method === 'pre') ROWS.push({ key: i + '|' + n, it: it, c: c, pack: true, q: it.qty[n], disc: 0, ship: SHIP });
-      else it.sizes.forEach(function (s) { var q = it.qty[n][s]; if (q) ROWS.push({ key: i + '|' + n + '|' + s, it: it, c: c, s: s, q: q, disc: 0, ship: (c.ship && c.ship[s]) || SHIP }); });
+  function buildRows() {
+    ITEMS = [dress('open'), shirt, dress('pre')];
+    ROWS = [];
+    ITEMS.forEach(function (it, i) {
+      Object.keys(it.qty).forEach(function (n) {
+        var c = color(it, n);
+        if (it.method === 'pre') ROWS.push({ key: i + '|' + n, it: it, c: c, pack: true, q: it.qty[n], disc: 0, du: '%', ship: packD(c) });
+        else it.sizes.forEach(function (s) { var q = it.qty[n][s]; if (q) ROWS.push({ key: i + '|' + n + '|' + s, it: it, c: c, s: s, q: q, disc: 0, du: '%', ship: shipD(c, s) }); });
+      });
     });
-  });
+  }
+  buildRows();
   function unit(r, f) { return r.pack ? packPrice(r.it, r.c, f || 'sale') : vprice(r.c, r.s)[f || 'sale']; }
-  function amount(r) { return r.q * unit(r) * (1 - r.disc / 100); }
+  /* 10-28 "정액으로 디스카운트를 줄 경우, 베리언트의 가장 최소값이 디스카운트의 맥스값" — % / $ 고르기. $ 는 개당(/pc)으로 모든 변형에서 빼고,
+     최대 = 그 줄 변형 중 가장 낮은 값(Pre Pack 은 팩 안 사이즈 중 최저 · Open 은 그 변형 값). 넘으면 Max $N(AS-IS 와 같은 문구), 금액은 최대까지만.
+     DISC_FIXED=false 면 예전처럼 % 고정 · 백업 …backup-before-disc-fixed.html */
+  var DISC_FIXED = true;
+  function maxOff(r) { return r.pack ? Math.min.apply(null, r.it.sizes.map(function (s) { return vprice(r.c, s).sale; })) : unit(r); }
+  function discErr(r) { return r.du === '$' && r.disc > maxOff(r) + 0.005; }
+  function after(price, r) { return r.du === '$' ? price - Math.min(r.disc, maxOff(r)) : price * (1 - Math.min(100, r.disc) / 100); }
+  function amount(r) { return r.pack ? r.q * r.it.sizes.reduce(function (t, s) { return t + r.it.ratio[s] * after(vprice(r.c, s).sale, r); }, 0) : r.q * after(unit(r), r); }
   function pcsOf(r) { return r.pack ? r.q * packPcs(r.it) : r.q; }
 
   var ADMIN_PC_AND_PACK = false;   /* 10-13 되돌림 — "예전화면으로 돌려줘": 개당 · 팩 · 총액은 원래도 있었다(펼치면 사이즈별 개당, 팩 줄 팩 금액, Amount 총액) */   /* Pre Pack 팩 줄 = 개당 + 팩 금액 + 수량 밑 pcs · false 면 팩 금액만(A안) · 백업 …backup-before-pc-and-pack.html */
@@ -238,7 +354,9 @@
     { date: '03/12/2026', id: 'ORD-20240313', buyer: 'Pacific Wholesale', ls: 'Fall 2026 Collection', total: 19.99, ship: '9 out of 199 items', next: '05/03/2026', nextSub: '4 days left', st: 'In Progress' },
     { date: '03/12/2026', id: 'ORD-20240314', buyer: 'Pacific Wholesale', ls: 'Fall 2026 Collection', total: 412.98, ship: '5 out of 111 items', next: '05/15/2026', nextSub: '16 days left', st: 'Closed' }
   ];
-  var state = { view: 'list', open: { '2|Heathered Olive': true } };
+  /* 10-19 "벤더 어드민에서도 접혀있게해줘" — PDP 처럼 Pre Pack 은 기본 접힘(팩 줄의 값 · 날짜는 보임), 화살표로 펼침. 되돌리려면 false(Heathered Olive 펼친 채로 시작) · 백업 …backup-before-admin-fold.html */
+  var ADMIN_FOLD_SHUT = true;
+  var state = { view: 'list', open: ADMIN_FOLD_SHUT ? {} : { '2|Heathered Olive': true } };
 
   var I = {
     search: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7.2" cy="7.2" r="4.7"/><path d="M10.7 10.7l3 3"/></svg>',
@@ -314,24 +432,38 @@
   function paintRows() {
     var groups = {}, order = [];
     ROWS.forEach(function (r) { if (!groups[r.ship]) { groups[r.ship] = []; order.push(r.ship); } groups[r.ship].push(r); });
-    order.sort(function (a, b) { return new Date(a) - new Date(b); });
+    order.sort(function (a, b) { return (a ? new Date(a) : 0) - (b ? new Date(b) : 0); });   /* In Stock('') 이 맨 위 */
     $('rows').innerHTML = order.map(function (d) {
       var rs = groups[d];
-      return '<tr class="grp"><td><span class="cb"></span></td><td colspan="7"><b>Ship by ' + d + '</b><span>' + rs.length + ' items</span></td><td><span class="date">' + d + I.cal + '</span></td><td></td></tr>' + rs.map(rowHTML).join('');
+      return '<tr class="grp"><td><span class="cb"></span></td><td colspan="7"><b>' + (d ? 'Ship by ' + d : 'In Stock') + '</b><span>' + rs.length + ' items</span></td><td>' + (d ? '<span class="date">' + d + I.cal + '</span>' : '—') + '</td><td></td></tr>' + rs.map(rowHTML).join('');
     }).join('');
     $('rows').querySelectorAll('input[data-k]').forEach(function (inp) {
       inp.oninput = function () {
         var r = ROWS.filter(function (x) { return x.key === inp.dataset.k; })[0], v = Math.max(0, parseFloat(inp.value) || 0);
-        if (inp.dataset.f === 'q') r.q = Math.round(v); else r.disc = Math.min(100, v);
+        if (inp.dataset.f === 'q') r.q = Math.round(v); else r.disc = r.du === '$' ? v : Math.min(100, v);
         var row = inp.closest('tr'); row.querySelector('.amt').textContent = money(amount(r));
+        var di = row.querySelector('input[data-f="d"]'), dm = row.querySelector('.dmax'), bad = discErr(r);
+        di.classList.toggle('err', bad); dm.hidden = !bad;
         var qp = row.querySelector('.qpcs'); if (qp) qp.textContent = (r.q * packPcs(r.it)) + ' pcs';
         if (r.pack) document.querySelectorAll('tr.sub[data-of="' + r.key + '"]').forEach(function (sr) {
           var s = sr.dataset.s; sr.querySelector('.pcs').textContent = (r.it.ratio[s] * r.q) + ' pcs';
-          sr.querySelector('.amt').textContent = money(r.it.ratio[s] * r.q * vprice(r.c, s).sale * (1 - r.disc / 100));
+          sr.querySelector('.amt').textContent = money(r.it.ratio[s] * r.q * after(vprice(r.c, s).sale, r));
         });
         $('sSub').textContent = money(total()); $('sTot').textContent = money(total());
       };
       inp.onclick = function (e) { e.stopPropagation(); };
+    });
+    $('rows').querySelectorAll('button.u').forEach(function (b) {
+      b.onclick = function (e) {
+        e.stopPropagation();
+        var r = ROWS.filter(function (x) { return x.key === b.dataset.k; })[0], m = b.parentNode.querySelector('.umenu');
+        document.querySelectorAll('.umenu').forEach(function (x) { if (x !== m) x.remove(); });
+        if (m) { m.remove(); return; }
+        m = document.createElement('div'); m.className = 'umenu';
+        m.innerHTML = ['%', '$'].map(function (u) { return '<button type="button" data-u="' + u + '"' + (r.du === u ? ' class="on"' : '') + '>' + u + '</button>'; }).join('');
+        m.onclick = function (ev) { ev.stopPropagation(); var u = ev.target.closest('[data-u]'); if (!u) return; r.du = u.dataset.u; if (r.du === '%') r.disc = Math.min(100, r.disc); paintRows(); $('sSub').textContent = money(total()); $('sTot').textContent = money(total()); };
+        b.parentNode.appendChild(m);
+      };
     });
     $('rows').querySelectorAll('tr.pack').forEach(function (tr) {
       tr.onclick = function (e) { if (e.target.closest('input,button:not(.fold)')) return; state.open[tr.dataset.k] = !state.open[tr.dataset.k]; paintRows(); };
@@ -347,7 +479,9 @@
       '<td>' + esc(r.c.name) + '</td><td class="nw">' + (r.pack ? 'Size Pack' : r.s) + (r.pack ? '<button type="button" class="fold" aria-label="Sizes">' + I.right + '</button>' : '') + '</td>' +
       '<td><span class="qty"><input data-k="' + r.key + '" data-f="q" value="' + r.q + '" inputmode="numeric" aria-label="Quantity"><span>' + (r.pack ? 'pack' : 'pcs') + '</span></span>' +
       (r.pack && ADMIN_PC_AND_PACK ? '<span class="qpcs" data-pcs="' + r.key + '">' + (r.q * packPcs(it)) + ' pcs</span>' : '') + '</td>' +
-      '<td><span class="disc"><input data-k="' + r.key + '" data-f="d" value="' + r.disc + '" inputmode="decimal" aria-label="Discount"><span class="u">%' + I.chev + '</span></span></td>';
+      '<td><span class="disc"><input data-k="' + r.key + '" data-f="d" value="' + r.disc + '" inputmode="decimal" aria-label="Discount"' + (discErr(r) ? ' class="err"' : '') + '>' +
+      (DISC_FIXED ? '<button type="button" class="u" data-k="' + r.key + '" aria-label="Discount type">' + r.du + I.chev + '</button>' : '<span class="u">%' + I.chev + '</span>') + '</span>' +
+      '<div class="dmax"' + (discErr(r) ? '' : ' hidden') + '>Max ' + money(maxOff(r)) + '</div></td>';
     if (r.pack) {
       /* 팩 줄 = 팩 금액(Qty packs × 값 = Amount가 맞게). 사이즈마다 값이 다르면 그 밑에 한 줄 알림, 펼치면 사이즈별 피스당 값 */
       var tip = '<span class="tc"><b>' + packPcs(it) + 'pcs / Pack</b>' + it.sizes.map(function (s) { return s + '(' + it.ratio[s] + ') ' + money(vprice(r.c, s).sale) + '/pc'; }).join(' - ') + '</span>';
@@ -362,23 +496,26 @@
       } else
       h += '<td><span class="tip">' + priceHTML(unit(r), unit(r, 'ws'), '/pack') + tip + '</span></td>';
     } else h += '<td>' + priceHTML(unit(r), unit(r, 'ws')) + '</td>';
-    h += '<td class="amt">' + money(amount(r)) + '</td><td><span class="date">' + r.ship + I.cal + '</span></td><td><button type="button" class="trash" aria-label="Delete">' + I.trash + '</button></td></tr>';
+    h += '<td class="amt">' + money(amount(r)) + '</td><td>' + (r.ship ? '<span class="date">' + r.ship + I.cal + '</span>' : '—') + '</td><td><button type="button" class="trash" aria-label="Delete">' + I.trash + '</button></td></tr>';
     if (open) h += it.sizes.map(function (s) {
       var pr = vprice(r.c, s), n = it.ratio[s] * r.q;
       return '<tr class="sub" data-of="' + r.key + '" data-s="' + s + '"><td></td><td></td><td></td><td class="o2">' + s + '</td><td><span class="pcs">' + n + ' pcs</span></td><td></td>' +
-        '<td>' + priceHTML(pr.sale, pr.ws, '/pc') + '</td><td class="amt">' + money(n * pr.sale * (1 - r.disc / 100)) + '</td><td></td><td></td></tr>';
+        '<td>' + priceHTML(pr.sale, pr.ws, '/pc') + '</td><td class="amt">' + money(n * after(pr.sale, r)) + '</td><td></td><td></td></tr>';
     }).join('');
     return h;
   }
 
+  document.addEventListener('click', function () { document.querySelectorAll('.umenu').forEach(function (x) { x.remove(); }); });
   function render() { if (state.view === 'detail') renderDetail(); else renderList(); }
   window.__view = function (v) { state.view = v; render(); };
+  window.__data = function (v) { WORST = v === 'worst'; buildRows(); render(); };
   render();
 })();
 </script>
 
 <div class="demo-ctl" id="demoCtl">
   <div class="demo-ctl-pop">
+    <div class="demo-ctl-title">DATA</div>
     <div class="demo-ctl-title">LAYOUT</div>
     <a class="demo-ctl-item" data-file="Shopcord-Item-Phase3-2026-08-06.html" href="Shopcord-Item-Phase3-2026-08-06.html">
       <span class="demo-ctl-check"></span><span>640 · 원본 기준<small>평면 단일 컬럼</small></span>
@@ -394,6 +531,12 @@
     </a>
     <a class="demo-ctl-item" data-file="Shopcord-Admin-Order-2026-10-12.html" href="Shopcord-Admin-Order-2026-10-12.html">
       <span class="demo-ctl-check"></span><span>Vendor Admin Orders<small>Figma 381-21731 · 리스트 · 상세</small></span>
+    </a>
+    <a class="demo-ctl-item" data-file="Shopcord-Admin-Linesheet-2026-10-19.html" href="Shopcord-Admin-Linesheet-2026-10-19.html">
+      <span class="demo-ctl-check"></span><span>Vendor Admin Linesheet<small>Figma 410-77903 · Special Price 일괄 변경</small></span>
+    </a>
+    <a class="demo-ctl-item" data-file="Shopcord-Admin-ItemList-2026-10-27.html" href="Shopcord-Admin-ItemList-2026-10-27.html">
+      <span class="demo-ctl-check"></span><span>Vendor Admin Item List<small>Figma 823-11957 · 838-22718 · 그리드 · 리스트 · Price range</small></span>
     </a>
   </div>
   <button class="demo-ctl-btn" type="button" aria-label="Demo control">
@@ -415,6 +558,9 @@
       a.addEventListener('click', function (e) { e.preventDefault(); });
     }
   });
+  function markData(v) { ctl.querySelectorAll('[data-data]').forEach(function (a) { var on = a.dataset.data === v; a.classList.toggle('is-current', on); a.querySelector('.demo-ctl-check').innerHTML = on ? CHECK : ''; }); }
+  ctl.querySelectorAll('[data-data]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); window.__data(a.dataset.data); markData(a.dataset.data); }); });
+  markData('normal');
   ctl.querySelector('.demo-ctl-btn').addEventListener('click', function (e) { e.stopPropagation(); ctl.classList.toggle('is-open'); });
   document.addEventListener('click', function (e) { if (!ctl.contains(e.target)) ctl.classList.remove('is-open'); });
 })();

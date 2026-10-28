@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>if (location.hash === '#embed' || window.__EMBED) document.documentElement.classList.add('is-embed');</script>
+<script>/* 사이드바 롤백 스위치 — false 면 예전 사이드바 */ var SIDEBAR_APP = true; if (SIDEBAR_APP) document.documentElement.setAttribute("data-sidebar", "new");</script>
+
 <!-- 사진은 파일 안에 넣었다(data URI) — 2026-10-12 "파일 안에 직접 넣어줘". Unsplash 주소를 걸어 두면 회사 네트워크에서 503 으로 빈칸이 됐다. 원래 주소는 README -->
 
 <meta charset="UTF-8">
@@ -220,6 +223,9 @@
   .section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
   .section-title { font-size: 16px; line-height: 24px; font-weight: 600; margin: 0; }
   .section-hint { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--fg-muted); }
+  /* 10-22 변형 개수 = 옵션1 값 수 × 옵션2 값 수 / 2,048 — Options 제목 줄 오른쪽 ("응 Options 제목 줄 오른쪽에 넣어줘"). 꽉 차서 값 입력이 막히면 진하게(예전 (Max. 30) 과 같은 방식). VAR_COUNT=false 면 숨김 · 백업 …backup-before-variant-count.html */
+  .var-count { font-variant-numeric: tabular-nums; }
+  .var-count.is-at-max { color: var(--fg); font-weight: 600; }
   .section-spacer { flex: 1; }
 
   .info-i { width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; color: var(--fg-muted); cursor: help; flex-shrink: 0; }
@@ -836,13 +842,88 @@
   .ls-ext svg { width: 12px; height: 12px; }
 
   /* ── Design note ── */
+
+  /* ══ 사이드바 = 실제 앱(Customers 화면 캡처 · cord-demo ShopcordSidebar.tsx) (2026-10-19 "왼쪽 메뉴를 오른쪽 커스토머페이지의 메뉴처럼 맞춰줘")
+     Dashboard · Item · Linesheet · Orders | Customers | SMS Campaigns · SMS Chat, 접기 버튼, My Account. 알림 점은 안 넣음.
+     되돌리려면 head 의 SIDEBAR_APP = false (예전 사이드바가 다시 보임) · 백업 …backup-before-sidebar.html */
+  html[data-sidebar="new"] .sb-old { display: none !important; }
+  html:not([data-sidebar="new"]) .sb-new { display: none !important; }
+  .scb { position: relative; height: 100%; display: flex; flex-direction: column; background: #fefefd; border: 1px solid #f2ede7; border-radius: 10px; font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; box-sizing: border-box; }
+  .scb *, .scb *::before, .scb *::after { box-sizing: border-box; }
+  .scb-brand { display: flex; align-items: center; gap: 8px; padding: 24px 12px 20px 24px; }
+  .scb-brand svg { flex-shrink: 0; }
+  .scb-collapse { position: absolute; right: -14px; top: 22px; width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 1px solid #ececec; background: #fff; color: #6b6b6b; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.05); z-index: 2; }
+  .scb-collapse svg { width: 14px; height: 14px; }
+  .scb-nav { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
+  .scb-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; font-size: 14px; line-height: 20px; font-weight: 500; color: #6b6b6b; text-decoration: none; cursor: pointer; }
+  .scb-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .scb-item:hover { background: rgba(0,0,0,.03); }
+  .scb-item.is-on { background: rgba(253,242,248,.6); color: #e11d74; font-weight: 600; }
+  .scb-sep { height: 1px; margin: 6px 8px; background: #f2ede7; }
+  .scb-acct { display: flex; align-items: center; gap: 10px; width: auto; margin: 0 12px; padding: 10px 2px; border: 0; border-top: 1px solid #f2ede7; border-radius: 0 0 10px 10px; background: none; font: inherit; text-align: left; cursor: pointer; }
+  .scb-acct:hover { background: rgba(0,0,0,.03); }
+  .scb-av { width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: #e11d74; color: #fff; display: inline-flex; align-items: center; justify-content: center; }
+  .scb-av svg { width: 16px; height: 16px; }
+  .scb-acct b { flex: 1; font-size: 14px; font-weight: 700; color: #1f1f1f; }
+  .scb-acct > svg { width: 16px; height: 16px; color: #a3a3a3; }
+  /* ══ Price per pack/variant 해제 확인 모달 (PV_OFF_MODAL, 2026-10-19) ══ */
+  .pv-dim { position: fixed; inset: 0; z-index: 900; background: rgba(15,23,42,.45); display: flex; align-items: center; justify-content: center; }
+  .pv-modal { width: 440px; max-width: calc(100vw - 32px); background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 20px 48px rgba(0,0,0,.2); font-size: 14px; line-height: 20px; color: var(--fg); }
+  .pv-modal h3 { margin: 0 0 8px; font-size: 18px; line-height: 26px; font-weight: 600; }
+  .pv-modal p { margin: 0 0 8px; color: var(--fg-secondary); }
+  .pv-modal .pv-prices { margin: 12px 0; padding: 10px 12px; border-radius: 8px; background: var(--muted); color: var(--fg); font-variant-numeric: tabular-nums; }
+  .pv-modal small { display: block; font-size: 12px; color: var(--fg-muted); }
+  .pv-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .pv-btns button { height: 36px; padding: 0 16px; border-radius: 6px; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .pv-btns .pv-no { border: 1px solid var(--border-input, #e2e8f0); background: #fff; color: var(--fg); }
+  .pv-btns .pv-yes { border: 1px solid var(--fg); background: var(--fg); color: #fff; }
+  /* 10-28 "아이템을 클릭하면 저게 오른쪽에서 드로어로 나와야함" — 아이템 리스트(…ItemList-2026-10-27.html) 안에 iframe 으로 띄울 때(#embed · window.__EMBED)는
+     뒤 목록 · 흐린 막을 숨기고 드로어만. 닫기 · Cancel · Save · 넓히기는 바깥에 알린다. 단독으로 열면 지금 그대로 · 백업 …backup-before-embed-drawer.html */
+  html.is-embed, html.is-embed body { background: transparent; }
+  html.is-embed .app, html.is-embed .scrim { display: none; }
+  html.is-embed .drawer, html.is-embed .drawer.is-wide { width: 100%; max-width: none; border-left: 0; box-shadow: none; }
 </style>
 </head>
 <body>
 
 <!-- ══════════ Items list ══════════ -->
 <div class="app">
-  <aside class="sidebar">
+  <aside class="sidebar sb-new" style="width:288px">
+  <div class="scb">
+    <div class="scb-brand"><svg width="17" height="22" viewBox="0 0 16.5221 21.6574" fill="none" >
+        <path d="M16.3394 12.7537L10.8993 7.97016H14.6165C15.2208 7.97016 15.7108 7.4845 15.7108 6.88559V1.08475C15.7108 0.485835 15.2208 0.000178457 14.6165 0.000178457H3.48262C3.17881 0.000178457 2.95995 0.196868 2.88469 0.438306L0.0746318 8.29756C-0.0508721 8.53242 -0.027914 8.84364 0.211104 9.05373L5.48099 13.6876H1.38426C0.779953 13.6876 0.289927 14.1732 0.289927 14.7721V20.5732C0.289927 21.1721 0.779953 21.6578 1.38426 21.6578H13.0275C13.3201 21.6578 13.527 21.4601 13.587 21.2242L16.4608 13.3983C16.5646 13.1969 16.5429 12.9329 16.3394 12.7539V12.7537Z" fill="#FFF2F5" />
+        <path d="M15.9818 13.688H5.48153L13.4102 20.6599C13.588 20.8162 13.636 21.0328 13.5872 21.2244L16.4611 13.3986C16.3756 13.5644 16.2055 13.688 15.9818 13.688Z" fill="#FDF2F8" />
+        <path d="M16.3394 12.754L10.8994 7.97052H0.626469C0.370614 7.97052 0.175216 8.10982 0.0749658 8.29792C-0.050538 8.53278 -0.02758 8.84399 0.211439 9.05408L5.48133 13.6879H15.9818C16.2055 13.6879 16.3757 13.5643 16.4611 13.3985C16.5649 13.197 16.5433 12.933 16.3397 12.754H16.3394Z" fill="#BE185D" />
+        <path d="M13.4104 20.6599L5.48168 13.688H1.3847C0.780391 13.688 0.290365 14.1736 0.290365 14.7726V20.5737C0.290365 21.1726 0.780391 21.6582 1.3847 21.6582H13.028C13.3206 21.6582 13.5274 21.4605 13.5874 21.2247C13.6361 21.033 13.5882 20.8164 13.4104 20.6601V20.6599Z" fill="#E11D74" />
+        <path d="M0.626607 7.97037H10.8996L3.06781 1.08395C2.86476 0.905461 2.81757 0.654163 2.88491 0.438512L0.0748494 8.29776C0.175355 8.10967 0.370753 7.97037 0.626352 7.97037H0.626607Z" fill="#FBCFE8" />
+      </svg><svg width="103" height="22" viewBox="0 0 103.308 21.5535" fill="none" >
+        <path d="M4.94994 16.9198C1.97059 16.9198 0.0469189 15.3285 0 13.1053H3.472C3.49546 13.7137 3.94119 14.0179 4.90302 14.0179C5.98216 14.0179 6.33405 13.6435 6.33405 13.1521C6.33405 12.3798 5.48951 12.3096 4.41037 12.1458C2.81513 11.9117 0.187675 11.5139 0.187675 8.72903C0.187675 6.38881 2.04097 4.75065 4.92648 4.75065C7.81199 4.75065 9.59491 6.41221 9.66529 8.49501H6.24021C6.14637 7.95676 5.67718 7.65253 4.9734 7.65253C4.1054 7.65253 3.75351 8.09717 3.75351 8.56522C3.75351 9.26728 4.59805 9.36089 5.67718 9.52471C7.3428 9.75873 9.89988 10.2034 9.89988 12.9414C9.89988 15.3285 7.92929 16.9198 4.94994 16.9198Z" fill="#1F1F1F" />
+        <path d="M11.8433 16.6156V0H15.3622V6.2952C16.066 5.2889 17.0513 4.75065 18.2477 4.75065C20.6875 4.75065 23.2915 6.38881 23.2915 10.6246V16.6156H19.7726V10.6246C19.7726 8.79924 18.8811 8.02697 17.5674 8.02697C16.3006 8.02697 15.3622 8.84604 15.3622 10.6246V16.6156H11.8433Z" fill="#1F1F1F" />
+        <path d="M31.0785 16.9198C27.4188 16.9198 24.8383 14.3456 24.8383 10.8352C24.8383 7.3249 27.4188 4.75065 31.0785 4.75065C34.7382 4.75065 37.3187 7.3249 37.3187 10.8352C37.3187 14.3456 34.7382 16.9198 31.0785 16.9198ZM31.0785 13.6435C32.6737 13.6435 33.7529 12.4968 33.7529 10.8352C33.7529 9.17367 32.6737 8.02697 31.0785 8.02697C29.4832 8.02697 28.4041 9.17367 28.4041 10.8352C28.4041 12.4968 29.4832 13.6435 31.0785 13.6435Z" fill="#1F1F1F" />
+        <path d="M38.8721 21.5535V10.9522C38.8721 7.06747 41.4995 4.75065 45.0419 4.75065C48.725 4.75065 51.3056 7.25469 51.3056 10.9756C51.3056 15.0008 48.3028 16.9198 45.6753 16.9198C44.2912 16.9198 43.1182 16.3816 42.391 15.3519V21.5535H38.8721ZM45.0654 13.6435C46.6606 13.6435 47.7397 12.4968 47.7397 10.8352C47.7397 9.17367 46.6606 8.02697 45.0654 8.02697C43.4701 8.02697 42.391 9.17367 42.391 10.8352C42.391 12.4968 43.4701 13.6435 45.0654 13.6435Z" fill="#1F1F1F" />
+        <path d="M58.643 16.9198C54.9833 16.9198 52.4028 14.3456 52.4028 10.8352C52.4028 7.3249 54.9833 4.75065 58.643 4.75065C61.8569 4.75065 64.2029 6.73984 64.6955 9.59491H61.1297C60.7309 8.63542 59.816 8.02697 58.643 8.02697C57.0478 8.02697 55.9686 9.17367 55.9686 10.8352C55.9686 12.4968 57.0478 13.6435 58.643 13.6435C59.816 13.6435 60.7309 13.035 61.1297 12.0756H64.6955C64.2029 14.9306 61.8569 16.9198 58.643 16.9198Z" fill="#FB4294" />
+        <path d="M71.9785 16.9198C68.3188 16.9198 65.7383 14.3456 65.7383 10.8352C65.7383 7.3249 68.3188 4.75065 71.9785 4.75065C75.6382 4.75065 78.2187 7.3249 78.2187 10.8352C78.2187 14.3456 75.6382 16.9198 71.9785 16.9198ZM71.9785 13.6435C73.5738 13.6435 74.6529 12.4968 74.6529 10.8352C74.6529 9.17367 73.5738 8.02697 71.9785 8.02697C70.3833 8.02697 69.3041 9.17367 69.3041 10.8352C69.3041 12.4968 70.3833 13.6435 71.9785 13.6435Z" fill="#FB4294" />
+        <path d="M79.7721 16.6156V10.0396C79.7721 6.43561 81.8835 4.75065 84.9801 4.75065C88.0768 4.75065 90.1646 6.41221 90.1881 10.063V10.1332H86.6692V10.0396C86.6692 8.49501 85.9654 8.02697 84.9801 8.02697C83.9948 8.02697 83.291 8.49501 83.291 10.0396V16.6156H79.7721Z" fill="#FB4294" />
+        <path d="M97.1381 16.9198C93.455 16.9198 90.8744 14.4158 90.8744 10.6948C90.8744 6.66964 93.8772 4.75065 96.5047 4.75065C97.8888 4.75065 99.0617 5.2889 99.789 6.3186V0H103.308V10.7182C103.308 14.603 100.68 16.9198 97.1381 16.9198ZM97.1146 13.6435C98.7099 13.6435 99.789 12.4968 99.789 10.8352C99.789 9.17367 98.7099 8.02697 97.1146 8.02697C95.5194 8.02697 94.4402 9.17367 94.4402 10.8352C94.4402 12.4968 95.5194 13.6435 97.1146 13.6435Z" fill="#FB4294" />
+        <rect x="54.7532" y="0" width="7.23155" height="2.06616" rx="0.332061" fill="#E11D74" />
+      </svg></div>
+    <button type="button" class="scb-collapse" aria-label="Collapse sidebar"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5L5.5 8l4.5 4.5"/></svg></button>
+    <nav class="scb-nav">
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Dashboard</a>
+      <a class="scb-item is-on" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5l5.5 3v7L8 14.5 2.5 11.5v-7L8 1.5z"/><path d="M2.5 4.5L8 7.5l5.5-3"/><path d="M8 14.5V7.5"/></svg>Item</a>
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M2 6h12"/><path d="M5 2v12"/></svg>Linesheet</a>
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h10l-1 8H4L3 4z"/><path d="M5.5 4V2.5h5V4"/></svg>Orders</a>
+      <div class="scb-sep"></div>
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5.5" r="2.5"/><path d="M2 13.5c.5-2.4 2-3.5 4-3.5s3.5 1.1 4 3.5"/><circle cx="12" cy="6" r="2"/><path d="M11 10.5c1.7 0 3 1 3.5 3"/></svg>Customers</a>
+      <div class="scb-sep"></div>
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5l5 1V11l-5 1z"/><path d="M7 6.5l6-3v9l-6-3"/><path d="M11 13.5v1.5"/></svg>SMS Campaigns</a>
+      <a class="scb-item" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3h11a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H8L5 13.5V11H2.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/></svg>SMS Chat</a>
+      <div class="scb-sep"></div>
+    </nav>
+    <button type="button" class="scb-acct"><span class="scb-av"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.5" r="2.5"/><path d="M3.5 13.5c.6-2.6 2.3-3.8 4.5-3.8s3.9 1.2 4.5 3.8"/></svg></span><b>My Account</b><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
+  </div>
+  </aside>
+  <aside class="sidebar sb-old">
     <div class="sidebar-inner">
       <div class="logo">
         <span class="logo-mark"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 12c3-6 9-9 16-9-2 5-7 8-12 8l-1 5H2z"/></svg></span>
@@ -984,7 +1065,7 @@
     </section>
 
     <!-- Prices -->
-    <section class="section">
+    <section class="section" id="pricesSection">
       <div class="section-head">
         <h2 class="section-title">Prices</h2>
         <span class="section-hint" id="pricesHint">Enter the price for this item</span>
@@ -1036,6 +1117,7 @@
         <h2 class="section-title">Options</h2>
         <span class="section-hint">(Max. 2)</span>
         <span class="section-spacer"></span>
+        <span class="section-hint var-count" id="varCount"></span>
       </div>
       <div class="opt-list" id="optsList"></div>
       <button class="add-option-btn" type="button" id="addOptionBtn">
@@ -1260,11 +1342,17 @@
      팩 값 = Σ 사이즈 가격 × 팩 안 수량 (바이어 PDP 의 팩 행). 근거: NuORDER 'Price per size'(기본가 + 사이즈별 덮어쓰기).
      되돌리려면 false — 팩 한 줄에 피스당 가격(TABLE_PER_PC) */
   var PRE_BY_SIZE = true;
-  function preBySize() { return PRE_BY_SIZE && TABLE_PER_PC && isPrePack() && state.priceVar && packAxes().length === 1; }
+  /* 10-19 옵션 1개 Pre Pack 도 "지금 우리가 새로 만든거랑 똑같이" — 팩 하나(key 'pack:*') ▸ 사이즈 줄. 재고는 팩 줄에만 */
+  function onePack() { return ONE_OPTION_FLAT && packAxes().length === 0; }
+  function preBySize() { return PRE_BY_SIZE && TABLE_PER_PC && isPrePack() && state.priceVar && (packAxes().length === 1 || onePack()); }
   function packLine() { return TABLE_PER_PC && SHOW_PACK_TOTAL && isPrePack(); }
   /* Quick pick(추천 옵션 칩 + 값 채우기)을 뺐다 (2026-09-29 사용자: "Quickpick 이거 삭제").
      Phase 2 프로토타입에서 가져온 기능이라 코드는 남겨두고 끈다 — 되돌리려면 true */
   var SHOW_QUICK_PICK = false;
+  /* 10-22 "Value의 갯수가 맥스 30개가 이제 아니야 … Option1 & 2에 있는 Value의 토탈값이 2048" — (Max. 30) 문구 삭제, 상한 = 전체 변형 2,048(옵션1 값 수 × 옵션2 값 수).
+     2,048 을 어디에 보여줄지는 미정(사용자와 논의 중) — 지금은 넘으면 입력만 막힌다. NO_MAX30=false 면 예전(옵션마다 30) · 백업 …backup-before-no-max30.html */
+  var NO_MAX30 = true, MAX_VARIANTS = 2048;
+  function wouldExceed(opt) { var p = 1; state.options.forEach(function (o) { p *= Math.max(1, (o === opt ? o.values.length + 1 : o.values.length)); }); return p > MAX_VARIANTS; }
   var MAX_OPT_VALUES = 30;   /* 옵션 하나에 넣을 수 있는 값의 수 — 라벨 (Max. 30) 과 같은 값 (2026-09-29: 50 아니고 30) */
   var MAX_COLOR_VALUES = [
     'Heathered Olive', 'Light Wash Blue', 'Burgundy Velvet', 'Charcoal Marled', 'Dusty Rose Pink',
@@ -1465,7 +1553,17 @@
   })();
 
   /* ══════════ Options ══════════ */
+  var VAR_COUNT = true;
+  function renderVarCount() {
+    var el = document.getElementById('varCount'); if (!el) return;
+    var withV = state.options.filter(function (o) { return o.values.length; });
+    el.hidden = !VAR_COUNT || !NO_MAX30;
+    var n = withV.length ? withV.reduce(function (p, o) { return p * o.values.length; }, 1) : 0;
+    el.textContent = n.toLocaleString('en-US') + ' / ' + MAX_VARIANTS.toLocaleString('en-US') + ' variants';
+    el.classList.toggle('is-at-max', state.options.some(function (o) { return wouldExceed(o); }));
+  }
   function renderOptions() {
+    renderVarCount();
     var list = $('optsList');
     list.innerHTML = '';
 
@@ -1480,7 +1578,7 @@
           '<input type="text" maxlength="15" class="opt-input opt-name-input" placeholder="Color">' +
         '</div>' +
         '<div class="opt-col-value">' +
-          '<label class="opt-field-label">Option Value <span class="info-i" data-tip="(Max. 15 chars.) Enter the selectable values for this option, such as Black, Ivory, S, M, or L.">' + ICON_INFO + '</span><span class="opt-field-hint">(Max. 30)</span></label>' +
+          '<label class="opt-field-label">Option Value <span class="info-i" data-tip="(Max. 15 chars.) Enter the selectable values for this option, such as Black, Ivory, S, M, or L.">' + ICON_INFO + '</span>' + (NO_MAX30 ? '' : '<span class="opt-field-hint">(Max. 30)</span>') + '</label>' +
           '<div class="opt-value-row">' +
             '<div class="opt-value-wrap">' +
               '<span class="opt-value-plus">' + IC_PLUS + '</span>' +
@@ -1511,14 +1609,14 @@
       var enterBtn = fields.querySelector('.opt-enter-btn');
       /* 라벨의 상한을 넘는 값이 그대로 들어가고 있었다 (2026-09-29 최대치 테스트에서 발견).
          꽉 차면 입력칸을 막고, 이유는 이미 떠 있는 (Max. 30) 이 말하도록 그 글씨만 진하게 한다 — 새 문구는 만들지 않는다 */
-      var atMax = opt.values.length >= MAX_OPT_VALUES;
+      var atMax = NO_MAX30 ? wouldExceed(opt) : opt.values.length >= MAX_OPT_VALUES;
       addInput.disabled = atMax;
       enterBtn.disabled = atMax;
       var maxHint = fields.querySelector('.opt-field-hint');
       if (maxHint) maxHint.classList.toggle('is-at-max', atMax);
       function commit() {
         if (!addInput.value.trim()) return;
-        if (opt.values.length >= MAX_OPT_VALUES) return;
+        if (NO_MAX30 ? wouldExceed(opt) : opt.values.length >= MAX_OPT_VALUES) return;
         opt.values.push(addInput.value.trim());
         renderOptions(); renderDerived();
         var c = list.querySelectorAll('.opt-card')[i];
@@ -1701,7 +1799,18 @@
     }
     return false;
   }
+  /* 10-27 개발 협의 — Price per pack/variant 를 켜면 Prices 섹션 통째로 숨김(잠금 · Locked 안내 · 토스트 없음).
+     켜진 동안 서버는 아이템 WS · Sale 을 변형 중 최저 WS · 최저 Sale 로 저장(Sale 없으면 비움, MSRP 그대로) — 아이템 리스트 Price range 필터용.
+     원래 Prices 는 따로 보관 → 끄면 원복(여기선 숨긴 칸에 값이 그대로 남아 있음). PRICES_HIDE = false 면 예전 회색 잠금 · 백업 …backup-before-prices-hide.html */
+  var PRICES_HIDE = true;
   function syncBaseLock() {
+    if (PRICES_HIDE) {
+      var sec = $('pricesSection'); if (sec) sec.hidden = !!state.priceVar;
+      var h0 = $('pricesLock'); if (h0) h0.hidden = true;
+      var m0 = $('priceVarNote'); if (m0) m0.hidden = true;
+      if (typeof syncOptInButtons === 'function') syncOptInButtons();
+      return;
+    }
     var lock = state.priceVar;   /* 모드가 켜져 있으면 잠근다 */
     ['baseWs', 'baseSale', 'baseMsrp'].forEach(function (id) {
       var n = $(id); if (!n) return;
@@ -1815,7 +1924,7 @@
 
   var CHEV_SVG = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l3 3 3-3"/></svg>';
   var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-  var STOCK_OPTS = ['In Stock', 'Out of Stock', 'Pre Order'];
+  var STOCK_OPTS = ['In Stock', 'Pre Order'];   /* 10-19 "이번스콥에서 아웃오브스탁은 안하기로 했으니 모두 삭제" — AS-IS 엔 Out of Stock 도 있다. 되돌리려면 가운데에 다시 넣는다 */
 
   /* ══ 달력 (2026-09-29): AS-IS 와 같은 달력에서 날짜를 누르는 순간이 곧 확정 ══════════
      전에는 글자 칸뿐이라 "날짜를 넣고 뭘 눌러야 하지?"가 비어 있었고, 12/3 같은 값도 들어갔다.
@@ -2106,7 +2215,7 @@
     }
 
     var sel = el('select', 'stock-select',
-      '<option>In Stock</option><option>Out of Stock</option><option>Pre Order</option>');
+      '<option>In Stock</option><option>Pre Order</option>');
     sel.value = st.stock;
     sel.addEventListener('change', function () { st.stock = sel.value; st.touched = true; paintDate(); syncShipCol(); });
     stock.appendChild(sel);
@@ -2126,13 +2235,15 @@
 
   /* Rows for the current selling method. Keys are stable so switching
      Pre <-> Open Pack never clobbers what the vendor already typed. */
+  var ONE_OPTION_FLAT = true;
   function sellRows() {
     var axes = liveOptions();
     if (!axes.length) return { groups: [], total: 0 };
 
     if (preBySize()) {
       /* 팩(컬러) 줄 ▸ 팩 안 사이즈 줄. 사이즈 줄 key = 'pack:<컬러>#<사이즈>' — 팩 key 'pack:<컬러>' 는 재고가 쓴다 */
-      var packs = packAxes()[0].values, ratio = ratioAxis();
+      var packs = onePack() ? ['*'] : packAxes()[0].values, ratio = ratioAxis();
+      if (onePack()) state.preGroupBy = 'pack';
       var inPack = ratio.values.filter(function (v) { return parseInt(packQty(v) || '0', 10) > 0; });
       if (!inPack.length) inPack = ratio.values;
       var szLabel = function (v) { var n = parseInt(packQty(v) || '0', 10); return n > 0 ? v + ' (' + n + ')' : v; };
@@ -2144,7 +2255,7 @@
         return { groups: sg, total: packs.length, bySize: true };
       }
       var cg = packs.map(function (c) {
-        return { head: { key: 'pack:' + c, label: c, ownStock: true, fold: true },
+        return { head: { key: 'pack:' + c, label: c === '*' ? 'Pack' : c, ownStock: true, fold: true },
                  rows: inPack.map(function (sz) { return { key: 'pack:' + c + '#' + sz, label: szLabel(sz), noStock: true }; }) };
       });
       return { groups: cg, total: packs.length, bySize: true };
@@ -2180,6 +2291,11 @@
       return { groups: groups, total: head.values.length * tailCombos.length };
     }
 
+    /* 10-19 옵션 1개 — "스몰두개 미듐두개 라지가 두개네 그럼안되지": 묶음 줄 S 아래 변형 줄 S 가 또 나왔다 → 묶음 없이 S · M · L 한 줄씩 (key 는 그대로라 넣은 값 유지).
+       되돌리려면 ONE_OPTION_FLAT = false · 백업 …backup-before-one-option.html */
+    if (ONE_OPTION_FLAT && axes.length === 1) {
+      return { groups: [{ head: null, rows: axes[0].values.map(function (v) { return { key: join([v]), label: v }; }) }], total: axes[0].values.length };
+    }
     if (state.openGroupBy >= axes.length) state.openGroupBy = 0;
     var p = axes[state.openGroupBy];
     var rest = axes.filter(function (_, i) { return i !== state.openGroupBy; });
@@ -2243,7 +2359,7 @@
     closeStockPop();
     bulkKeys = allKeys;
     /* 사이즈별 Pre Pack 이면 가격은 사이즈 줄, 재고는 팩 줄 — Apply to all 의 재고는 팩 key 에 쓴다 */
-    bulkShipKeys = model.bySize ? liveOptions().length && packAxes()[0].values.map(function (c) { return 'pack:' + c; }) : null;
+    bulkShipKeys = model.bySize ? liveOptions().length && (onePack() ? ['pack:*'] : packAxes()[0].values.map(function (c) { return 'pack:' + c; })) : null;
     fill.appendChild(BULK_BY_BUTTON ? bulkApplyBtn(allKeys) : bulkLabel());
     activeFields().forEach(function (f) { fill.appendChild(bulkInput(f)); });
     shipCells(fill, 'all');
@@ -2805,7 +2921,7 @@
     var lines = [];
     if (state.priceVar) {
       if (isPrePack()) lines.push(TABLE_PER_PC
-        ? '<b>Prices are per piece</b>, same as Prices above.' +
+        ? '<b>Prices are per piece</b>' + (PRICES_HIDE ? '.' : ', same as Prices above.') +   /* 10-27 Prices 섹션이 숨겨지니 '위 Prices' 언급 뺌 */
           (preBySize() ? (state.preGroupBy === 'size'
             ? ' Stock is set per pack — group by ' + packAxes()[0].name + ' to change it.'
             : ' A pack row fills its sizes; a size row can differ.') : '') +
@@ -2817,7 +2933,8 @@
       lines.push('<b>Some rows still have their own price.</b> They are kept but not used — turn <b>Price per ' +
         unitWord(false) + '</b> back on to see them.');
     }
-    if (state.priceVar) lines.push('Use <b>Apply to all</b> or a group header to fill many rows at once \u00b7 <b>Tab</b> moves down the column.');
+    var oneFlat = ONE_OPTION_FLAT && liveOptions().length === 1 && !isPrePack();   /* 옵션 1개 Open Pack 은 묶음 줄이 없다 */
+    if (state.priceVar) lines.push('Use <b>Apply to all</b>' + (oneFlat ? '' : ' or a group header') + ' to fill many rows at once \u00b7 <b>Tab</b> moves down the column.');
     note.innerHTML = lines.join('<br>');
   }
 
@@ -2989,6 +3106,8 @@
   /* ══════════ Open Pack grouping ══════════ */
   function renderOpenPack() {
     var axes = liveOptions(), sel = $('openGroupBy');
+    /* 옵션 1개면 묶을 축이 없다 — Group by 줄을 숨긴다 */
+    sel.closest('.pack-card').hidden = ONE_OPTION_FLAT && axes.length === 1;
     if (!axes.length) { sel.innerHTML = '<option>—</option>'; return; }
     if (state.openGroupBy >= axes.length) state.openGroupBy = 0;
     sel.innerHTML = '';
@@ -3003,7 +3122,7 @@
   /* 사이즈별 Pre Pack 의 Group by — 팩(컬러)로 묶기 / 사이즈로 묶기. Open Pack 의 Group by 와 같은 모양 */
   function renderPreGroup() {
     var row = $('preGroupRow'), sel = $('preGroupBy');
-    var on = preBySize();
+    var on = preBySize() && !onePack();   /* 팩이 하나면 묶을 축이 없다 */
     row.hidden = !on;
     if (!on) return;
     var packAx = packAxes()[0], ratio = ratioAxis();
@@ -3084,10 +3203,35 @@
   state.packQty['L'] = '2';
 
 
+  /* 10-19 "Price per variant 클릭했다가 다시 언클릭해서 원복하는경우에 너의 가격이 달라진다 예전가격으로 돌아간다라는거를 모달로 띄워줘야할거같아"
+     — 표에 따로 넣은 가격이 있을 때만 확인. Cancel = 체크 유지, Turn off = 해제(위 Prices 값으로 돌아감).
+     되돌리려면 false(바로 해제) · 백업 …backup-before-pv-modal.html */
+  var PV_OFF_MODAL = true;
+  function applyPriceVar(on) { state.priceVar = on; $('priceVarToggle').checked = on; renderSellTable(); syncBaseLock(); }
+  function pvOffModal() {
+    var unit = unitWord(false), units = unitWord(true);
+    var fmt = function (f, label) { var v = baseVal(f); return v ? label + ' $' + parseFloat(v).toFixed(2) : null; };
+    var line = [fmt('ws', 'WS'), fmt('sale', 'Sale'), fmt('msrp', 'MSRP')].filter(Boolean).join(' · ') || 'No item price yet';
+    var d = document.createElement('div');
+    d.className = 'pv-dim';
+    d.innerHTML = '<div class="pv-modal" role="alertdialog" aria-modal="true" aria-labelledby="pvT">' +
+      '<h3 id="pvT">Turn off Price per ' + unit + '?</h3>' +
+      '<p>All ' + units + ' will go back to the item price in <b>Prices</b>. The prices you set for each ' + unit + ' won\'t apply.</p>' +
+      '<div class="pv-prices">' + line + ' /pc</div>' +
+      '<small>Tick Price per ' + unit + ' again before saving to bring them back.</small>' +
+      '<div class="pv-btns"><button type="button" class="pv-no">Cancel</button><button type="button" class="pv-yes">Turn off</button></div></div>';
+    document.body.appendChild(d);
+    var esc = function (e) { if (e.key === 'Escape') close(false); };
+    var close = function (off) { d.remove(); document.removeEventListener('keydown', esc); applyPriceVar(!off); };
+    d.querySelector('.pv-no').onclick = function () { close(false); };
+    d.querySelector('.pv-yes').onclick = function () { close(true); };
+    d.addEventListener('click', function (e) { if (e.target === d) close(false); });
+    document.addEventListener('keydown', esc);
+    d.querySelector('.pv-yes').focus();
+  }
   $('priceVarToggle').addEventListener('change', function (e) {
-    state.priceVar = e.target.checked;
-    renderSellTable();
-    syncBaseLock();
+    if (!e.target.checked && PV_OFF_MODAL && anyRowPrice()) { e.target.checked = true; pvOffModal(); return; }
+    applyPriceVar(e.target.checked);
   });
 
   if (!UNDO_ICONS) $('histBox').hidden = true;
@@ -3099,6 +3243,22 @@
      쥬얼리: Metal(Gold · Silver · Bronze) 팩 × Length(10" · 12" · 13") 비율 2-2-2 = 6pcs, 기준가 WS 18.00 · Sale 16.00 · MSRP 40.00 /pc.
      Gold 는 길이마다 값이 다르고, Silver 는 12" 만 기준가를 물려받고, Bronze 는 세 길이가 같은 값 — 팩 줄 칸 모양 세 가지(-, 회색, 검정)가 다 보이게 */
   window.__loadSample = function (name) {
+    /* 10-19 "오픈팩이랑 프리팩이랑 둘다 옵션을 1개만 선택해서 세팅했을때에 나오는 그림들을 만들어보자! 먼저 아이템세팅!"
+       — 옵션 = Size(S · M · L) 하나. 값은 흐름 데이터의 FG-SS25-101(사이즈만 있는 상품) WS 10.50 · Sale 10.00 · MSRP 22.00, Pre Pack 2-2-2 */
+    if (name === 'one-option') {
+      var nm = document.querySelector('input[placeholder^="Enter Item Name"]');
+      if (nm) nm.value = 'FG-SS25-101';
+      $('baseWs').value = '10.50'; $('baseSale').value = '10.00'; $('baseMsrp').value = '22.00';
+      state.options = [ { name: 'Size', values: ['S', 'M', 'L'], preset: '', sub: -1 } ];
+      state.ratioBy = 0; state.ratioByTouched = true;
+      state.packQty = { 'S': '2', 'M': '2', 'L': '2' };
+      state.cells = {}; state.ship = {}; state.preOpen = {}; state.preGroupBy = 'pack';
+      state.priceVar = false; $('priceVarToggle').checked = false;
+      histPast = []; histFuture = []; syncHistBtns();
+      bulkLast = { stock: 'In Stock', date: '' };
+      renderOptions(); renderDerived(); syncBaseLock();
+      return;
+    }
     if (name !== 'jewelry') { location.reload(); return; }
     var nameIn = document.querySelector('input[placeholder^="Enter Item Name"]');
     if (nameIn) nameIn.value = 'Snake Chain Necklace';
@@ -3120,7 +3280,7 @@
       'pack:Bronze#12"': c('14.00', '12.00', '32.00'),
       'pack:Bronze#13"': c('14.00', '12.00', '32.00')
     };
-    state.ship = {}; state.preOpen = { 'pack:Gold': true }; state.preGroupBy = 'pack';
+    state.ship = {}; state.preOpen = {}; state.preGroupBy = 'pack';   /* 10-19 "벤더 어드민에서도 접혀있게해줘" — PDP 처럼 Pre Pack 은 기본 접힘(팩 줄의 값 · 날짜는 보임), 화살표로 펼침 — 쥬얼리 샘플도 Gold 펼침으로 시작하지 않음 · 백업 …backup-before-admin-fold.html */
     state.priceVar = true; $('priceVarToggle').checked = true;
     state.sellingMethod = 'pre-pack';
     document.querySelectorAll('.toggle-pill').forEach(function (b) { b.classList.toggle('is-active', b.dataset.view === 'pre-pack'); });
@@ -3184,6 +3344,9 @@
     <button class="demo-ctl-item" type="button" data-sample="jewelry">
       <span class="demo-ctl-check"></span><span>쥬얼리<small>Gold · Silver · Bronze × 10" · 12" · 13"</small></span>
     </button>
+    <button class="demo-ctl-item" type="button" data-sample="one-option">
+      <span class="demo-ctl-check"></span><span>옵션 1개 (Size)<small>S · M · L 하나만 — Pre / Open 둘 다</small></span>
+    </button>
     <div class="demo-ctl-sep"></div>
     <div class="demo-ctl-title">LAYOUT</div>
     <a class="demo-ctl-item" data-file="Shopcord-Item-Phase3-2026-08-06.html"
@@ -3202,6 +3365,12 @@
     </a>
     <a class="demo-ctl-item" data-file="Shopcord-Admin-Order-2026-10-12.html" href="Shopcord-Admin-Order-2026-10-12.html">
       <span class="demo-ctl-check"></span><span>Vendor Admin Orders<small>Figma 381-21731 · 리스트 · 상세</small></span>
+    </a>
+    <a class="demo-ctl-item" data-file="Shopcord-Admin-Linesheet-2026-10-19.html" href="Shopcord-Admin-Linesheet-2026-10-19.html">
+      <span class="demo-ctl-check"></span><span>Vendor Admin Linesheet<small>Figma 410-77903 · Special Price 일괄 변경</small></span>
+    </a>
+    <a class="demo-ctl-item" data-file="Shopcord-Admin-ItemList-2026-10-27.html" href="Shopcord-Admin-ItemList-2026-10-27.html">
+      <span class="demo-ctl-check"></span><span>Vendor Admin Item List<small>Figma 823-11957 · 838-22718 · 그리드 · 리스트 · Price range</small></span>
     </a>
     <div class="demo-ctl-sep"></div>
     <a class="demo-ctl-item" data-file="pack-model-explainer.html" href="pack-model-explainer.html">
@@ -3252,6 +3421,20 @@
   document.addEventListener('click', function (e) {
     if (!ctl.contains(e.target)) ctl.classList.remove('is-open');
   });
+})();
+</script>
+<script>
+/* 10-28 아이템 리스트 안 드로어로 열렸을 때 — 닫기 · Cancel · Save → 닫기, 넓히기 → 바깥 폭도 같이, 톱니 LAYOUT 링크 → 바깥 화면 이동 */
+(function () {
+  if (!document.documentElement.classList.contains('is-embed') || window.parent === window) return;
+  function tell(m) { window.parent.postMessage(m, '*'); }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a.demo-ctl-item[data-file]');
+    if (a) { e.preventDefault(); tell({ type: 'ed-go', file: a.getAttribute('data-file') }); return; }
+    if (e.target.closest('.drawer-close, .drawer-head .btn')) { tell({ type: 'ed-close' }); return; }
+    if (e.target.closest('#drawerExpand')) setTimeout(function () { tell({ type: 'ed-wide', wide: document.querySelector('.drawer').classList.contains('is-wide') }); }, 0);
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !document.querySelector('.pv-btns')) tell({ type: 'ed-close' }); });
 })();
 </script>
 </body>
