@@ -288,6 +288,9 @@
      Price per variant 를 켠 아이템: 저장 WS = 변형 중 최저 WS, 저장 Sale = Sale 이 있는 변형(Sale < WS) 중 최저 Sale, 없으면 '-'.
      변형 가격이 다를 때만 뒤에 ~, 다 같으면 ~ 없음 (TILDE — 10-27 "값이 다 같으면 ~는 필요없어" 확정 · false 면 ~ 없음) */
   var TILDE = true;
+  /* 11-04 PM 정책(사용자 "체크하면 무조건 ~"): Price per variant 를 켠 아이템은 값이 다 같아도 ~, 끈 아이템은 ~ 없음.
+     false 면 바로 전(변형 가격이 다를 때만 ~) · 백업 …ItemList-2026-10-27.backup-before-tilde-pv.html */
+  var TILDE_PV = true;
   function V(ws, sale) { return { ws: ws, sale: sale == null ? ws : sale }; }
   /* 보통 값 = 바이어 PLP 의 상품 8개와 같은 이름 · 사진 · 변형 가격 */
   var FLOW = [
@@ -313,7 +316,7 @@
     { no: '7', name: 'Variants $5 – $100', style: 'FG-SS25-999', img: 0, o1: ['Color', 2], o2: ['Size', 3], st: 'active', av: ['pre'], pv: true, v: [V(5), V(100)] }
   ];
   var NOTES = {
-    flow: 'Same 8 products as the buyer PLP. Items with Price per variant on show the saved WS · Sale = lowest variant price (~ when values differ).',
+    flow: 'Same 8 products as the buyer PLP. Items with Price per variant on show the saved WS · Sale = lowest variant price (' + (TILDE_PV ? 'always ~ when Price per variant is on' : '~ when values differ') + ').',
     cases: 'Number = PDP · PLP price case (0 = Price per variant off, 7 = $5 – $100). ④⑤ Special are linesheet values, so not here. Case 2: Sale $35 looks higher than WS $30~ because the two lowest prices come from different variants.'
   };
 
@@ -326,6 +329,7 @@
     var ws = it.v.map(function (p) { return p.ws; });
     var sale = it.v.filter(function (p) { return p.sale < p.ws - 0.005; }).map(function (p) { return p.sale; });
     var wsMin = Math.min.apply(null, ws), wsMax = Math.max.apply(null, ws);
+    if (TILDE_PV) return { ws: wsMin, wsMany: !!it.pv, sale: sale.length ? Math.min.apply(null, sale) : null, saleMany: !!it.pv };
     return { ws: wsMin, wsMany: wsMax - wsMin > 0.005, sale: sale.length ? Math.min.apply(null, sale) : null, saleMany: sale.length > 1 && Math.max.apply(null, sale) - Math.min.apply(null, sale) > 0.005 };
   }
   function showP(v, many) { return v == null ? '-' : money(v) + (TILDE && many ? '~' : ''); }

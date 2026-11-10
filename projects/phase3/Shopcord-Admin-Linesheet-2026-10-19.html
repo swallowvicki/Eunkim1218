@@ -91,10 +91,31 @@
   .undo { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 8px; background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; color: var(--fg); }
   .undo svg { width: 16px; height: 16px; }
   .undo:disabled { color: var(--fg-3); cursor: default; }
+  /* 11-02 Reset all 확인 창 — 640 Turn off Price per pack 창(.pv-*)과 같은 모양 */
+  #resetAll svg { width: 14px; height: 14px; }
+  .pv-dim { position: fixed; inset: 0; z-index: 900; background: rgba(15,23,42,.45); display: flex; align-items: center; justify-content: center; }
+  .pv-modal { width: 440px; max-width: calc(100vw - 32px); background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 20px 48px rgba(0,0,0,.2); font-size: 14px; line-height: 20px; color: var(--fg); }
+  .pv-modal h3 { margin: 0 0 8px; font-size: 18px; line-height: 26px; font-weight: 600; }
+  .pv-modal p { margin: 0; color: var(--fg-2); }
+  .pv-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .pv-btns button { height: 36px; padding: 0 16px; border-radius: 6px; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .pv-btns .pv-no { border: 1px solid #e2e8f0; background: #fff; color: var(--fg); }
+  .pv-btns .pv-yes { border: 1px solid var(--fg); background: var(--fg); color: #fff; }
+  /* 11-02 RESET_APP — 실제 앱 확인 창(Deactivate Linesheet) 모양, 색은 캡처 픽셀 */
+  .pv-modal.pv-app { width: 360px; color: #252322; }
+  .pv-modal.pv-app .pv-head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .pv-modal.pv-app .pv-ico { flex: none; width: 32px; height: 32px; border-radius: 50%; background: #fef7f6; color: #e84a4b; display: inline-flex; align-items: center; justify-content: center; }
+  .pv-modal.pv-app .pv-ico svg { width: 16px; height: 16px; }
+  .pv-modal.pv-app h3 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; color: #020816; }
+  .pv-modal.pv-app p { color: #252322; }
+  .pv-modal.pv-app .pv-btns { margin-top: 24px; }
+  .pv-modal.pv-app .pv-btns button { flex: 1; height: 40px; }
+  .pv-modal.pv-app .pv-btns .pv-no { border-color: #f2eee8; color: #252322; }
+  .pv-modal.pv-app .pv-btns .pv-yes.danger { border-color: #e84a4b; background: #e84a4b; color: #fff; }
   table { width: 100%; border-collapse: collapse; }
   th { height: 40px; padding: 0 8px; text-align: left; font-size: 12px; font-weight: 500; color: var(--fg-2); white-space: nowrap; border-bottom: 1px solid var(--line); }
-  th .eye { display: inline-flex; vertical-align: middle; margin-left: 4px; color: var(--fg-2); }
-  th .eye svg { width: 14px; height: 14px; }
+  th .eye { display: inline-flex; vertical-align: middle; margin-left: 4px; color: #1f1f1f; }
+  th .eye svg { width: 16px; height: 16px; }   /* 11-02 "아이콘 맞춰줘" — AS-IS Ghost 아이콘 버튼(Icon / Eye · EyeOff, #1f1f1f) */
   td { height: 52px; padding: 0 8px; font-size: 13px; vertical-align: middle; }
   tr.it td { border-top: 1px solid var(--line); }
   tr.it:first-child td { border-top: 0; }
@@ -104,6 +125,12 @@
   .cb { width: 16px; height: 16px; border: 1px solid #d4d4d4; border-radius: 4px; background: #fff; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; cursor: pointer; padding: 0; color: #fff; }
   .cb svg { width: 10px; height: 10px; }
   .cb.is-on, .cb.is-mix { background: var(--fg); border-color: var(--fg); }
+  /* 11-02 SP_EYE — Special 눈 끔 = 사용 안 함: 체크박스 · Special 칸 · Reset all 회색으로 막음(열은 그대로, 값은 지우지 않음) */
+  .cb:disabled { background: #f5f5f4; border-color: #e5e5e5; cursor: default; }
+  th .eye.btn-eye { border: 0; background: none; padding: 0; cursor: pointer; }
+  .spin.is-off { background: #f5f5f4; border-color: var(--line) !important; }
+  .spin.is-off input, .spin.is-off i { color: var(--fg-3); cursor: default; }
+  .spin.is-off input::placeholder, .spin.is-off input[placeholder="Mixed"]::placeholder { color: var(--fg-3); }   /* 11-02 "여기는 그냥 검정으로 해?" → 막힌 칸은 Mixed 도 회색 */
   .iname { display: flex; align-items: center; gap: 8px; max-width: 220px; }
   .iname img { width: 24px; height: 32px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
   .iname span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -113,10 +140,13 @@
   td.date { color: var(--fg-2); white-space: nowrap; }
   td.pr { white-space: nowrap; }
   td.pr.dim { color: var(--fg-2); }
+  td.pr.col-off { color: rgba(35,33,33,.2); }   /* 11-03 "나머지 가격들도 눈감으면 저렇게" — AS-IS MSRP 눈 감은 칸 = #232121 · 20% */
+  .spin.is-off input, .spin.is-off i, .spin.is-off input::placeholder, .spin.is-off input[placeholder="Mixed"]::placeholder { color: rgba(35,33,33,.2) !important; }
   .spin { display: inline-flex; align-items: center; width: 92px; height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--pink); }
   .spin i { font-style: normal; }
   .spin input { width: 100%; border: 0; outline: 0; padding: 0; font-size: 13px; color: var(--pink); background: none; }
   .spin input::placeholder { color: var(--fg-3); }
+  .spin input[placeholder="Mixed"]::placeholder { color: #1f1f1f; }   /* LS_MIXED — 640 Item 표의 Mixed 와 같은 색 */
   .spin:focus-within { border-color: var(--pink); }
   .spin:has(input:placeholder-shown) i { display: none; }   /* 값이 달라 비어 있는 칸은 `-` 만 */
   .spin.is-new { background: var(--pink-soft); transition: background .8s; }
@@ -124,7 +154,7 @@
      칸은 평소 모양 그대로, 같은 줄 칸 오른쪽에 회색 안내 한 줄. SP_NOTE=false 면 바로 전(주황 칸) · 백업 …backup-before-sp-note.html */
   .spin.is-hi { border-color: #e0b77a; background: var(--amber-bg); }
   html[data-spnote] .spin.is-hi { border-color: var(--line); background: #fff; }
-  html[data-saveerr] .spin.is-hi { border-color: var(--red); }   /* 10-26 저장 막힌 칸 = 빨간 테두리(Figma 727:353759) — Save 누른 뒤에만 */
+  html[data-saveerr] .spin.is-hi { border-color: var(--red); }   /* 10-26 저장 막힌 칸 = 빨간 테두리(Figma 727:353759) — Save 누른 뒤에만 · 11-02 열 때 이미 역전이면 열 때부터(OPEN_INV) */
   /* 안내는 칸 밑 (10-21 "밑에 써주는게 맞고 밑에 써지면 패딩을 늘리면되잖아") — 안내가 있는 줄만 위아래 여백을 늘리고 줄 전체를 위 정렬,
      글자 줄 가운데(12 + 10)와 입력 칸 가운데(6 + 16)를 같은 높이에 맞춘다. 예전 「칸 오른쪽 같은 줄」은 좁은 화면에서 밑으로 떨어져 어긋났다 */
   .sp-note { display: block; margin-top: 4px; font-size: 12px; line-height: 16px; color: var(--fg-2); white-space: nowrap; }
@@ -138,11 +168,14 @@
   .acts button { border: 0; background: none; padding: 0; cursor: pointer; color: var(--fg); display: inline-flex; }
   .acts svg { width: 16px; height: 16px; }
   .acts .tg svg { transition: transform .15s; }
-  tr.it.is-closed .acts .tg svg { transform: rotate(180deg); }
+  tr.it.is-closed .acts .tg svg, tr.it.tg-part .acts .tg svg { transform: rotate(180deg); }   /* 11-03 TG_ALL: 다 열린 게 아니면 ⌄ */
   .sp-pack { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
   .sp-pack .fold { border: 0; background: none; padding: 0; cursor: pointer; color: var(--fg-2); display: inline-flex; transition: transform .15s; }
   .sp-pack .fold svg { width: 14px; height: 14px; }
   tr.lf.is-open .sp-pack .fold { transform: rotate(90deg); }
+  /* 11-02 "이거 방향 아래/위로 해줘" — 접힘 ⌄ · 펼침 ⌃(Figma 팩 줄 화살표와 같음). FOLD_UPDOWN=false 면 예전 › / ⌄ · 백업 …backup-before-fold-updown.html */
+  html[data-fold-ud] .sp-pack .fold { transform: rotate(90deg); }
+  html[data-fold-ud] tr.lf.is-open .sp-pack .fold { transform: rotate(-90deg); }
   .tip { position: relative; display: inline-flex; color: var(--fg-3); cursor: default; }
   .tip svg { width: 13px; height: 13px; }
   .tip .tc { display: none; position: absolute; left: 50%; top: calc(100% + 8px); transform: translateX(-50%); z-index: 5; width: 220px; padding: 8px 12px; border-radius: 8px; background: #111; color: #fff; font-size: 12px; line-height: 18px; white-space: normal; }
@@ -162,6 +195,7 @@
   .bval input { width: 100%; border: 0; outline: 0; font-size: 14px; text-align: right; }
   .bval i { font-style: normal; color: var(--fg-2); font-size: 13px; }
   .bval.bad { border-color: var(--red); }
+  .bulk .bmax { font-size: 12px; color: var(--red); white-space: nowrap; }   /* 11-02 어드민 오더 .dmax 와 같은 색 · 크기 */
   .bsel { height: 32px; padding: 0 28px 0 10px; border: 1px solid var(--line-2); border-radius: 8px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236b6b6b' stroke-width='1.5'%3E%3Cpath d='M4.5 6.5L8 10l3.5-3.5'/%3E%3C/svg%3E") no-repeat right 8px center / 12px; font-size: 13px; appearance: none; cursor: pointer; }
   .bulk .ex { font-size: 12px; color: var(--fg-2); white-space: nowrap; }
   .bulk .ex b { color: var(--pink); font-weight: 600; }
@@ -299,6 +333,11 @@
   var LS_ALL_SIZES = true;
   /* 10-19 "벤더 어드민에서도 접혀있게해줘" — PDP 처럼 Pre Pack 은 기본 접힘(팩 줄의 값 · 날짜는 보임), 화살표로 펼침. 되돌리려면 false(전부 펼친 채로 시작) · 백업 …backup-before-admin-fold.html */
   var LS_FOLD_SHUT = true;
+  /* 11-03 사용자 "프리팩인경우에 오른쪽 휴지통 왼쪽 Expand collapse … 다 열어주거나 다 닫아주거나 … 옵션별로도 열고닫기가 있어서 할 수 있으나, 전체적으로는 다 열고 다 닫기".
+     상품 줄 ⌃⌄ = 그 상품 전체: 닫혀 있으면 ⌄ → 누르면 전부 엶(상품 + 팩마다 사이즈 줄까지).
+     열려 있으면 ⌃(팩 일부만 열려 있어도) → 누르면 전부 닫음. (처음엔 '다 열렸을 때만 ⌃'로 했다가 사용자 "안열렸으면 ⌄이고 열려있는건 ⌃이지"로 고침) 팩 줄 ⌄⌃ 는 그 팩만(예전 그대로). Open Pack 은 사이즈 줄이 없어 예전과 같음.
+     false 면 예전(상품 줄만 접고 펴기, 팩 상태 그대로) · 백업 …backup-before-tg-all.html */
+  var TG_ALL = true;
   /* ══ Special ≥ WS 주의 (2026-10-21 "2번도 같이 해줘") ══════════════════════════════════════════
      Special 은 여기서, WS 는 아이템 세팅에서 넣어 Special 이 WS 보다 높거나 같아질 수 있다(직접 입력 · 나중에 WS 를 내림).
      바이어 화면은 그 변형을 할인이 아닌 보통 가격으로 보인다(PDP · PLP · 카트 SP_OVER_WS) — 벤더가 모르면 안 되니 여기서 알린다.
@@ -320,7 +359,7 @@
   /* 10-26 "ws 혹은 sale 가격보다 높으면 안돼" → "같아도 막음"(Figma 라인시트 Black $9.80 = Sale 도 빨간 테두리 · 2 rows) — 저장 막는 기준 = Sale(없으면 WS)과 같거나 높을 때.
      true 면 높을 때만(같으면 저장됨) · 백업 …backup-before-no-cell-note.html */
   var SAVE_GT = false;
-  function isHi(p) { if (PM_POLICY) return SAVE_GT ? p.special > pmBase(p) + 0.005 : p.special >= pmBase(p) - 0.005; return SP_OVER_WS && p.special >= p.ws - 0.005; }
+  function isHi(p) { if (isZero(p)) return true; if (PM_POLICY) return SAVE_GT ? p.special > pmBase(p) + 0.005 : p.special >= pmBase(p) - 0.005; return SP_OVER_WS && p.special >= p.ws - 0.005; }
   /* 10-21 "각각의 가격밑에 문구를 보여주는것은 투머치 … 높던낮던같던 다 저장할거잖아" → "입력칸 밑에 보여주는 문구는 없애고 그냥 띠배너형태로 안내"
      칸 밑 안내(Higher than / Same as WS Price) 없음 · 칸은 평소 모양 · 표 위 띠 한 줄만. true 면 칸 밑 안내 + 짧은 띠 · 백업 …backup-before-band-only.html */
   /* 10-26 "이렇게 인풋박스 밑에 글써있는거 삭제야!" · "대신 저장 못함" — 칸 밑 Not applied 안내 없음. 저장하면 빨간 띠(Can't save …)로만 알리고 막음.
@@ -334,7 +373,28 @@
     if (PM_POLICY) { var hs = list.some(function (p) { return p.special > pmBase(p) + 0.005; }), lb = list.every(function (p) { return p.sale > 0; }) ? 'Sale Price' : 'WS Price'; return '<span class="sp-note">Not applied · ' + (hs ? 'Higher than ' : 'Same as ') + lb + '</span>'; }
     var hi = list.some(function (p) { return p.special > p.ws + 0.005; }); return '<span class="sp-note">' + (hi ? 'Higher than WS Price' : 'Same as WS Price') + '</span>';
   }
-  function hiRows() { return allLeaves().filter(function (l) { return prices(l).some(isHi); }).length; }
+  /* BULK_ZERO 띠 — $0.00 줄만 있으면 그 문장, Special ≥ Sale 줄도 있으면 한 줄에 둘 다 */
+  /* 11-04 사용자 "베리언트로 유지하기로 했어" — N selected · 저장 차단 띠 N = variant(컬러 × 사이즈) 개수. Pre Pack 팩 하나를 체크하면 사이즈 수만큼 셈(Special 은 사이즈마다 저장).
+     false 면 바로 전(줄 = Pre Pack 은 팩 단위) · 백업 …backup-before-cnt-variant.html */
+  var CNT_VARIANT = true;
+  function cntOf(ls, f) { return CNT_VARIANT ? ls.reduce(function (a, l) { return a + prices(l).filter(f || function () { return true; }).length; }, 0) : (f ? ls.filter(function (l) { return prices(l).some(f); }) : ls).length; }
+  function zeroRows() { return cntOf(allLeaves(), isZero); }
+  /* 11-02 "UXW 용어로 해줘" — rows → Special Prices, raise/lower → enter a higher/lower price, clear → leave … blank. 개수 = 줄(Pre Pack 은 팩 = N selected 와 같은 단위).
+     UXW_BAN=false 면 바로 전 문구(… rows have … — raise/lower or clear them.) · 백업 …backup-before-uxw-banner.html */
+  var UXW_BAN = true;
+  function zeroBan() {
+    var z = zeroRows(), h = cntOf(allLeaves(), function (p) { return !isZero(p) && isHi(p); });
+    if (!UXW_BAN) {
+      var rz = z + ' row' + (z === 1 ? ' has' : 's have') + ' a Special Price of $0.00';
+      if (!h) return 'Can\'t save. ' + rz + ' — raise or clear ' + (z === 1 ? 'it' : 'them') + '.';
+      return 'Can\'t save. ' + h + ' row' + (h === 1 ? ' has' : 's have') + ' a Special Price at or above the Sale (or WS) Price and ' + rz + ' — fix or clear them.';
+    }
+    var sp = function (k) { return k + ' Special Price' + (k === 1 ? ' is' : 's are'); }, it = function (k) { return k === 1 ? 'it' : 'them'; };
+    if (z && !h) return 'Can\'t save. ' + sp(z) + ' $0.00 — enter a higher price or leave ' + it(z) + ' blank.';
+    if (h && !z) return 'Can\'t save. ' + sp(h) + ' at or above the Sale (or WS) Price — enter a lower price or leave ' + it(h) + ' blank.';
+    return 'Can\'t save. ' + sp(h) + ' at or above the Sale (or WS) Price and ' + z + (z === 1 ? ' is' : ' are') + ' $0.00 — fix or leave them blank.';
+  }
+  function hiRows() { if (typeof SP_EYE !== 'undefined' && SP_EYE && state.spOff) return 0; return cntOf(allLeaves(), isHi); }
   window.__spHigh = function (on) {
     var d = ITEMS.filter(function (x) { return x.id === 'dress'; })[0];
     d.leaves.forEach(function (l) { Object.keys(l.p).forEach(function (k) {
@@ -342,7 +402,7 @@
       if (PM_POLICY) { l.p[k].special = on && PM_INV[l.v1] && PM_INV[l.v1][k] != null ? r2(l.p[k].sale + PM_INV[l.v1][k]) : by.special; return; }
       l.p[k].special = on ? r2(l.p[k].ws + (SP_HIGH[l.v1] != null ? SP_HIGH[l.v1] : SP_HIGH_ALL)) : by.special;
     }); });
-    HIST = []; FUT = []; state.msg = null; state.flash = {}; state.saveErr = false; render();
+    HIST = []; FUT = []; state.msg = null; state.flash = {}; state.saveErr = false; openInv(); render();
   };
   window.__spOver = SP_OVER_WS;
   var state = { sel: {}, closed: {}, open: { 'dress|Heathered Olive': true }, packShut: {}, mode: 'pct', val: '', base: 'ws', msg: null, flash: {} };
@@ -357,11 +417,13 @@
     trash: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11M6 4.5V3a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v1.5M4 4.5l.7 9a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-9"/></svg>',
     pen: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.5l3 3L6 13H3v-3z"/></svg>',
     plus: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3.5 8h9M8 3.5v9"/></svg>',
-    eye: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>',
+    eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>',
     info: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 7.2v3.6M8 5.2h.01"/></svg>',
     check: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.2l2.3 2.3 4.7-5"/></svg>',
     dash: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h6"/></svg>',
     monitor: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="8.5" rx="1"/><path d="M5.5 13.5h5M8 11v2.5"/></svg>',
+    reset: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9"/><path d="M2.5 2.5v2.6h2.6"/></svg>',
     undo: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 3.5L2.5 6.5l3 3"/><path d="M2.5 6.5h7a4 4 0 0 1 0 8H7"/></svg>',
     redo: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 3.5l3 3-3 3"/><path d="M13.5 6.5h-7a4 4 0 0 0 0 8H9"/></svg>'
   };
@@ -385,11 +447,28 @@
     var v = list.map(function (p) { return p[f]; });
     return v.every(function (x) { return Math.abs(x - v[0]) < 0.005; }) ? v[0] : null;
   }
-  function cellTxt(list, f) { var v = one(list, f); return v == null ? '-' : money(v); }
+  /* 10-30 640 Item 표와 맞춤 — 값이 서로 다르면 `-` 대신 `Mixed`. `-` 는 이제 "값 없음"만(Special 은 비워 둘 수 있어 `-` 가 "없음/다름" 둘로 읽혔다).
+     false 면 예전처럼 다르든 비었든 `-` · 백업 …Linesheet-2026-10-19-backup-before-mixed.html */
+  var LS_MIXED = true;
+  function mixed(list, f) {
+    var v = list.map(function (p) { return p[f]; }).filter(function (x) { return x != null && !isNaN(x); });
+    return LS_MIXED && one(list, f) == null && v.length > 0;   /* 하나라도 값이 있는데 한 값으로 안 모임 */
+  }
+  /* 11-02 "Mixed가 맞나? 아님 ~가 맞나?" → 글자 칸은 `~`, 입력칸은 Mixed. 아이템 · 팩 줄 WS · Sale · MSRP(읽기 전용 글자)는 값이 다르면 최저 + `~`
+     (엣지 케이스 문서 10/27 · 아이템 리스트 최저가 · 바이어 헤더 `$X~` 와 같은 말). Special 입력칸은 Mixed 그대로(spPh). false 면 10-30 Mixed · 백업 …backup-before-lowest-tilde.html */
+  var LS_TILDE = false;
+  var FOLD_UPDOWN = true; if (FOLD_UPDOWN) document.documentElement.setAttribute('data-fold-ud', '');   /* 같은 날 "그냥 입력칸 아니더라도 Mixed로 해줘" — 글자 칸도 Mixed. true 면 최저 + ~ */
+  function cellTxt(list, f) {
+    var v = one(list, f);
+    if (v != null) return money(v);
+    if (LS_TILDE && mixed(list, f)) return money(Math.min.apply(null, list.map(function (p) { return p[f]; }).filter(function (x) { return x != null && !isNaN(x); }))) + '~';
+    return mixed(list, f) ? 'Mixed' : '-';
+  }
+  function spPh(list) { return mixed(list, 'special') ? 'Mixed' : (LS_MIXED ? '' : '-'); }
 
   /* ══ 선택 ══ */
   function selLeaves() { return allLeaves().filter(function (l) { return state.sel[l.key]; }); }
-  function cbHTML(on, mix, attr) { return '<button type="button" class="cb' + (on ? ' is-on' : mix ? ' is-mix' : '') + '" ' + attr + ' aria-pressed="' + !!on + '">' + (on ? I.check : mix ? I.dash : '') + '</button>'; }
+  function cbHTML(on, mix, attr) { return '<button type="button" class="cb' + (on ? ' is-on' : mix ? ' is-mix' : '') + '" ' + attr + ' aria-pressed="' + !!on + '"' + (spOff() ? ' disabled' : '') + '>' + (on ? I.check : mix ? I.dash : '') + '</button>'; }
   function groupState(leaves) {
     var n = leaves.filter(function (l) { return state.sel[l.key]; }).length;
     return { on: n > 0 && n === leaves.length, mix: n > 0 && n < leaves.length };
@@ -402,22 +481,36 @@
     var v = parseFloat(state.val);
     return r2(state.mode === 'pct' ? base * (1 - v / 100) : base - v);
   }
+  /* 11-02 "벌크로 디스카운트를 입력하는경우에 최소값이상으로 들어가면 안되잖아 … $10.05 넣으면 마이너스" — $ off 는 고른 변형들의 기준가(WS 또는 Sale) 최저보다 작아야 한다.
+     넘으면(같아도 — 결과 $0) 칸 빨간 테두리 + 빨간 `Max $N`(어드민 오더 할인 칸과 같은 AS-IS 문구, N = 최저 − $0.01), Apply 막힘. false 면 예전(넣고 $0 이하는 건너뜀) · 백업 …backup-before-bulk-max.html */
+  var BULK_MAX = false;   /* 같은 날 Kelly "max 값 확인 없이 무조건 적용하고 에러표시" → Max 없음(BULK_ZERO) */
+  /* 11-02 BULK_ZERO: 정률 · 정액 모두 Apply 는 늘 됨. 결과가 $0 이하인 변형은 $0.00 으로 들어가고 바로 빨간 테두리 + 빨간 띠(저장 막힘) —
+     Special ≥ Sale 에러와 같은 말투. 고치거나 비우면 띠 사라짐. false 면 예전($0 이하는 건너뛰고 알림) · 백업 …backup-before-bulk-zero.html */
+  var BULK_ZERO = false;   /* 같은 날 PM 정리로 대체 — BULK_BLANK */
+  /* 11-02 PM: "벌크 정액 디스카운트 적용시 특정 행이 음수가 된다면 -> null로 표시 … 문구: Prices that would drop to $0 or below after the discount are left blank."
+     "이미 스페셜 프라이스가 입력되어있어도 벌크 적용을 하면 덮어씌운다" — 결과 $0 이하 = 그 변형 Special 을 비움(원래 값이 있어도), 빨간 표시 · 저장 막힘 없음, 바 아래 알림에 PM 문구.
+     결과가 Sale(없으면 WS) 이상이면 건너뛰는 10/22 규칙은 그대로. false 면 BULK_ZERO 쪽 · 백업 …backup-before-bulk-blank.html */
+  var BULK_BLANK = true;
+  function isZero(p) { return BULK_ZERO && typeof p.special === 'number' && !isNaN(p.special) && p.special < 0.005; }
+  function maxBase() { var m = Infinity; selLeaves().forEach(function (l) { Object.keys(l.p).forEach(function (k) { var b = l.p[k][state.base]; if (b > 0 && b < m) m = b; }); }); return m; }
+  function amtOver() { var v = parseFloat(state.val); return BULK_MAX && state.mode === 'amt' && v > 0 && maxBase() < Infinity && v >= maxBase() - 0.005; }
   function valOK() {
     var v = parseFloat(state.val);
     if (!(v > 0)) return false;
-    return state.mode === 'pct' ? v < 100 : true;
+    if (amtOver()) return false;
+    return state.mode === 'pct' && !BULK_ZERO && !BULK_BLANK ? v < 100 : true;
   }
   function snapshot() { var s = {}; allLeaves().forEach(function (l) { s[l.key] = {}; Object.keys(l.p).forEach(function (k) { s[l.key][k] = l.p[k].special; }); }); return s; }
   function restore(s) { allLeaves().forEach(function (l) { Object.keys(l.p).forEach(function (k) { l.p[k].special = s[l.key][k]; }); }); }
   function apply() {
     if (!valOK()) return;
-    var before = snapshot(), n = 0, skip = 0, over = 0, hiSkip = 0;
+    var before = snapshot(), n = 0, skip = 0, over = 0, hiSkip = 0, zero = 0, blank = 0;
     state.flash = {};
     selLeaves().forEach(function (l) {
       var ok = false;
       Object.keys(l.p).forEach(function (k) {
         var nv = calc(l.p[k][state.base]);
-        if (nv <= 0) { skip++; return; }
+        if (nv <= 0) { if (BULK_BLANK) { l.p[k].special = null; ok = true; blank++; return; } if (BULK_ZERO) { l.p[k].special = 0; ok = true; zero++; return; } skip++; return; }
         /* 10-22 "안넣은건 건너뛰고 넣은것만 계산하면돼" — 결과가 그 행 Sale(없으면 WS) 이상이면 넣지 않고 건너뜀(그 행 Special 은 그대로). 넣은 값만 계산.
            BULK_SKIP_HI=false 면 바로 전(넣고 Not applied · 저장 시 차단) · 백업 …backup-before-bulk-skip-hi.html */
         if (PM_POLICY && BULK_SKIP_HI && nv >= pmBase(l.p[k]) - 0.005) { hiSkip++; return; }
@@ -433,7 +526,56 @@
       (hiSkip ? ' ' + hiSkip + ' price' + (hiSkip === 1 ? ' was' : 's were') + ' skipped because the result would be at or above the Sale Price.' : '') +
       (over ? ' ' + over + ' price' + (over === 1 ? ' is' : 's are') + (PM_POLICY ? ' at or above the Sale Price and won\'t apply.' : ' now higher than the Sale Price.') : '') };
     if (over) state.msg.warn = true;
+    if (zero) { state.msg.warn = true; state.saveErr = true; }
+    if (blank) state.msg = { warn: true, t: 'Prices that would drop to $0 or below after the discount are left blank.' };   /* PM 문구 한 문장만(앞 "updated for N rows" 없이) */   /* $0.00 은 Apply 직후 바로 빨강 */
     render();
+  }
+  /* 11-02 PM "스페셜 프라이스를 리셋하는 기능 … 옵션이 전체가 2048이면 한번에 빈칸으로" · 사용자 "벌크바에 넣는거 말고" · "선택 안했을때에도" · "한번에 리셋하기"
+     표 제목 줄(Selected Items) ↶ 왼쪽, 늘 보임 · 체크와 상관없이 라인시트 전체 Special 을 비움 · 확인 창(640 Turn off 창과 같은 모양) · ↶ 로 되돌림.
+     Special 이 하나도 없으면 눌러도 아무 일 없음(버튼은 막지 않음). false 면 버튼 없음 · 백업 …backup-before-reset-all.html */
+  var RESET_ALL = true;
+  /* 11-02 사용자 "앞의 두개(Deactivate Linesheet · Save changes before preview?) 디자인처럼" · "배치 바꿔줘"
+     확인 창 = 실제 앱 창 모양: 제목 왼쪽 동그라미 아이콘(연빨강 #fef7f6 · 빨강 #e84a4b, 캡처 픽셀) · 버튼 둘 반반 폭 · Reset 빨강(Deactivate 와 같은 지우기 동작).
+     버튼 자리 = ↶ ↷ 다음, Add Item 왼쪽(보조 → 주). false 면 예전 창·↶ 왼쪽 · 백업 …backup-before-reset-modal-app.html */
+  var RESET_APP = true;
+  /* 11-02 사용자 "Special Price의 눈아이콘 클릭해서 가린다면(사용안함) … 벌크 업로드는 못하도록" → 추천안 "응 그렇게 해줘".
+     Special 머리 칸 눈을 누르면 켜고 끔. 끄면 체크박스(머리 · 상품 · 줄) · Special 칸 · Reset all 을 회색으로 막음, 고르던 것은 풀리고 벌크바 사라짐.
+     열은 그대로(표가 옆으로 안 움직임) · 값은 지우지 않음(다시 켜면 그대로) · 안내 문구 없음(꺼진 눈이 이유) · 꺼진 동안 Special ≥ Sale 빨간 띠 · 저장 막힘도 없음.
+     false 면 예전(눈은 그림만) · 백업 …backup-before-special-eye.html */
+  var SP_EYE = true;
+  /* 11-03 Sale · MSRP 눈도 누름 — 감으면 그 열 값 #232121 20%(AS-IS 와 같은 색). Special 막힌 칸 글자도 같은 색. false 면 Sale · MSRP 눈은 장식 · 백업 …backup-before-eye-all.html */
+  var EYE_ALL = true;
+  function colOff(f) { return EYE_ALL && !!(state.colOff || {})[f]; }
+  function offCls(f) { return colOff(f) ? ' col-off' : ''; }
+  function eyeBtn(f, label) { return '<button type="button" class="eye btn-eye" data-eye="' + f + '" aria-pressed="' + !colOff(f) + '" aria-label="' + (colOff(f) ? 'Show ' : 'Hide ') + label + '">' + (colOff(f) ? I.eyeOff : I.eye) + '</button>'; }
+  /* 11-03 사용자 "Figma처럼: 지울 Special이 없으면 회색으로 막는 규칙" — Reset all 은 지울 Special 이 하나도 없으면 회색(막힘). false 면 예전(늘 활성, 눌러도 아무 일 없음) · 백업 …backup-before-reset-empty.html */
+  var RESET_EMPTY_OFF = true;
+  function anySpecial() { return allLeaves().some(function (l) { return prices(l).some(function (p) { return typeof p.special === 'number' && !isNaN(p.special); }); }); }
+  function spOff() { return SP_EYE && !!state.spOff; }
+  function resetAll() {
+    var before = snapshot(), n = 0;
+    allLeaves().forEach(function (l) { var hit = false; Object.keys(l.p).forEach(function (k) { if (typeof l.p[k].special === 'number' && !isNaN(l.p[k].special)) { l.p[k].special = null; hit = true; } }); if (hit) n++; });
+    if (!n) return;
+    HIST.push(before); FUT = []; state.flash = {}; state.saveErr = false;
+    state.msg = { warn: false, t: 'Special Price reset for ' + n + ' row' + (n === 1 ? '' : 's') + '.' };
+    render();
+  }
+  function resetAllAsk() {
+    var any = allLeaves().some(function (l) { return prices(l).some(function (p) { return typeof p.special === 'number' && !isNaN(p.special); }); });
+    if (!any) return;
+    var d = document.createElement('div'); d.className = 'pv-dim';
+    d.innerHTML = '<div class="pv-modal' + (RESET_APP ? ' pv-app' : '') + '" role="alertdialog" aria-modal="true" aria-labelledby="raT">' +
+      (RESET_APP ? '<div class="pv-head"><span class="pv-ico">' + I.reset + '</span><h3 id="raT">Reset all Special Prices?</h3></div>' : '<h3 id="raT">Reset all Special Prices?</h3>') +
+      '<p>All Special Prices in this linesheet will be left blank. You can undo this before saving.</p>' +
+      '<div class="pv-btns"><button type="button" class="pv-no">Cancel</button><button type="button" class="pv-yes' + (RESET_APP ? ' danger' : '') + '">Reset</button></div></div>';
+    document.body.appendChild(d);
+    var onKey = function (e) { if (e.key === 'Escape') close(false); };
+    var close = function (ok) { d.remove(); document.removeEventListener('keydown', onKey); if (ok) resetAll(); };
+    d.querySelector('.pv-no').onclick = function () { close(false); };
+    d.querySelector('.pv-yes').onclick = function () { close(true); };
+    d.addEventListener('click', function (e) { if (e.target === d) close(false); });
+    document.addEventListener('keydown', onKey);
+    d.querySelector('.pv-yes').focus();
   }
   function undo() { if (!HIST.length) return; FUT.push(snapshot()); restore(HIST.pop()); state.msg = null; state.flash = {}; render(); }
   function redo() { if (!FUT.length) return; HIST.push(snapshot()); restore(FUT.pop()); state.msg = null; state.flash = {}; render(); }
@@ -453,14 +595,15 @@
   }
   function bulkHTML() {
     var ls = selLeaves();
-    if (!ls.length) return '';
+    if (!ls.length || spOff()) return '';
     var ex = '';
     if (valOK()) {
       var l = ls[0], k = Object.keys(l.p)[0], b = l.p[k][state.base];
       ex = '<span class="ex">e.g. ' + esc(l.color || l.v1) + (k ? ' · ' + k : l.v2 && l.v2 !== 'pack' ? ' · ' + esc(l.v2) : '') + ' ' + money(b) + ' → <b>' + money(Math.max(calc(b), 0)) + '</b></span>';
     }
     var bad = state.val !== '' && !valOK();
-    return '<div class="bulk" id="bulk"><span class="cnt">' + ls.length + ' selected</span><span class="vr"></span>' +
+    if (amtOver()) ex = '<span class="bmax">Max ' + money(r2(maxBase() - 0.01)) + '</span>';   /* e.g. 자리 — 막대 높이가 안 변한다 */
+    return '<div class="bulk" id="bulk"><span class="cnt">' + cntOf(ls) + ' selected</span><span class="vr"></span>' +
       '<span class="lbl">Special Price</span>' +
       '<span class="seg"><button type="button" data-mode="pct"' + (state.mode === 'pct' ? ' class="is-on"' : '') + '>% off</button><button type="button" data-mode="amt"' + (state.mode === 'amt' ? ' class="is-on"' : '') + '>$ off</button></span>' +
       '<span class="bval' + (bad ? ' bad' : '') + '">' + (state.mode === 'amt' ? '<i>$</i>' : '') + '<input id="bVal" inputmode="decimal" placeholder="0" value="' + esc(state.val) + '" aria-label="Amount">' + (state.mode === 'pct' ? '<i>%</i>' : '') + '</span>' +
@@ -469,20 +612,26 @@
       '<button type="button" class="clr" id="bClear">Clear selection</button></div>';
   }
   function spInput(attr, v, ph) {
+    if (spOff()) return '<span class="spin is-off"><i>$</i><input ' + attr + ' disabled inputmode="decimal" value="' + (v == null ? '' : v.toFixed(2)) + '" placeholder="' + (ph || '') + '" aria-label="Special Price"></span>';
     return '<span class="spin"><i>$</i><input ' + attr + ' inputmode="decimal" value="' + (v == null ? '' : v.toFixed(2)) + '" placeholder="' + (ph || '') + '" aria-label="Special Price"></span>';
   }
+  /* TG_ALL 도우미 — 팩 줄(사이즈 줄을 접고 펴는 줄)과 그 열림 상태 */
+  function tgPacks(it) { return it.method === 'pre' ? it.leaves : []; }
+  function packOpen(lf) { return LS_ALL_SIZES ? (state.packShut[lf.key] === undefined ? !LS_FOLD_SHUT : !state.packShut[lf.key]) : !!state.open[lf.key]; }
+  function packSet(lf, on) { if (LS_ALL_SIZES) state.packShut[lf.key] = !on; else state.open[lf.key] = on; }
+  function tgFull(it) { return !state.closed[it.id] && tgPacks(it).every(packOpen); }
   function rowsHTML() {
     var h = '';
     ITEMS.forEach(function (it) {
       var ps = [].concat.apply([], it.leaves.map(prices)), g = groupState(it.leaves), closed = state.closed[it.id];
       var badge = '<span class="badge amber">Pre-Order</span>';
-      h += '<tr class="it' + (closed ? ' is-closed' : '') + '"><td class="c-cb">' + cbHTML(g.on, g.mix, 'data-selitem="' + it.id + '"') + '</td>' +
+      h += '<tr class="it' + (closed ? ' is-closed' : '') + '' + '"><td class="c-cb">' + cbHTML(g.on, g.mix, 'data-selitem="' + it.id + '"') + '</td>' +
         '<td><div class="iname"><img src="' + it.img + '" alt=""><span>' + esc(it.name) + '</span></div></td><td>' + esc(it.style) + '</td>' +
         '<td class="opt"><b>' + it.o1[0] + '</b><small>' + it.o1[1] + ' value' + (it.o1[1] === 1 ? '' : 's') + '</small></td>' +
         '<td class="opt">' + (it.o2 ? '<b>' + it.o2[0] + '</b><small>' + it.o2[1] + ' value' + (it.o2[1] === 1 ? '' : 's') + '</small>' : '') + '</td>' +
         '<td>' + badge + '</td>' +
-        '<td class="pr">' + cellTxt(ps, 'ws') + '</td><td class="pr">' + cellTxt(ps, 'sale') + '</td>' +
-        '<td>' + spInput('data-sp="item|' + it.id + '"', one(ps, 'special'), '-') + '</td><td class="pr">' + cellTxt(ps, 'msrp') + '</td>' +
+        '<td class="pr">' + cellTxt(ps, 'ws') + '</td><td class="pr' + offCls('sale') + '">' + cellTxt(ps, 'sale') + '</td>' +
+        '<td>' + spInput('data-sp="item|' + it.id + '"', one(ps, 'special'), spPh(ps)) + '</td><td class="pr' + offCls('msrp') + '">' + cellTxt(ps, 'msrp') + '</td>' +
         '<td><div class="acts"><button type="button" class="tg" data-tg="' + it.id + '" aria-label="Collapse">' + I.up + '</button><button type="button" aria-label="Delete">' + I.trash + '</button></div></td></tr>';
       if (closed) return;
       it.leaves.forEach(function (lf, i) {
@@ -496,13 +645,13 @@
           : esc(lf.v2);
         h += '<tr class="lf' + (open ? ' is-open' : '') + '"><td class="c-cb">' + cbHTML(state.sel[lf.key], false, 'data-sel="' + esc(lf.key) + '"') + '</td>' +
           '<td style="padding-left:40px">' + mb + '</td><td></td><td class="o-v">' + esc(lf.v1) + '</td><td class="o-v">' + o2 + '</td><td class="date">' + lf.date + '</td>' +
-          '<td class="pr">' + cellTxt(lp, 'ws') + '</td><td class="pr">' + cellTxt(lp, 'sale') + '</td>' +
-          '<td>' + spInput('data-sp="leaf|' + esc(lf.key) + '"', one(lp, 'special'), '-').replace('class="spin"', 'class="spin' + (state.flash[lf.key] ? ' is-new' : '') + (lp.some(isHi) && (!open || one(lp, 'special') != null) ? ' is-hi' : '') + '"') + (packNote(lp) ? note(lp) : '')   /* 10-26 펼친 팩의 '-' 칸은 빨간 테두리 없음 — 문제 사이즈 줄만 */ + '</td><td class="pr">' + cellTxt(lp, 'msrp') + '</td><td></td></tr>';
+          '<td class="pr">' + cellTxt(lp, 'ws') + '</td><td class="pr' + offCls('sale') + '">' + cellTxt(lp, 'sale') + '</td>' +
+          '<td>' + spInput('data-sp="leaf|' + esc(lf.key) + '"', one(lp, 'special'), spPh(lp)).replace('class="spin"', 'class="spin' + (state.flash[lf.key] ? ' is-new' : '') + (lp.some(isHi) && (!open || one(lp, 'special') != null) ? ' is-hi' : '') + '"') + (packNote(lp) ? note(lp) : '')   /* 10-26 펼친 팩의 '-' 칸은 빨간 테두리 없음 — 문제 사이즈 줄만 */ + '</td><td class="pr' + offCls('msrp') + '">' + cellTxt(lp, 'msrp') + '</td><td></td></tr>';
         if (open) it.sizes.forEach(function (s) {
           var p = lf.p[s];
           h += '<tr class="sz"><td></td><td></td><td></td><td></td><td class="sz-n">' + s + '(' + it.ratio[s] + ')</td><td></td>' +
-            '<td class="pr dim">' + money(p.ws) + '</td><td class="pr dim">' + money(p.sale) + '</td>' +
-            '<td>' + spInput('data-sp="size|' + esc(lf.key) + '|' + s + '"', p.special).replace('class="spin"', 'class="spin' + (state.flash[lf.key] ? ' is-new' : '') + (isHi(p) ? ' is-hi' : '') + '"') + (SP_NOTE && isHi(p) && !packNote(prices(lf)) ? note([p]) : '') + '</td><td class="pr dim">' + money(p.msrp) + '</td><td></td></tr>';
+            '<td class="pr dim">' + money(p.ws) + '</td><td class="pr dim' + offCls('sale') + '">' + money(p.sale) + '</td>' +
+            '<td>' + spInput('data-sp="size|' + esc(lf.key) + '|' + s + '"', p.special).replace('class="spin"', 'class="spin' + (state.flash[lf.key] ? ' is-new' : '') + (isHi(p) ? ' is-hi' : '') + '"') + (SP_NOTE && isHi(p) && !packNote(prices(lf)) ? note([p]) : '') + '</td><td class="pr dim' + offCls('msrp') + '">' + money(p.msrp) + '</td><td></td></tr>';
         });
       });
     });
@@ -520,19 +669,26 @@
       '<div><label>Description<span>0/1000</span></label><textarea>A bright, easygoing Summer 2026 collection designed for warm-weather dressing, featuring lightweight fabrics, relaxed silhouettes, and versatile pieces made for everyday wear, vacation styling.</textarea><div class="url">Share URL<span>Available after active</span></div></div>' +
       '<div><label>Banner</label><div class="banner"><div><img src="data:image/jpeg;base64,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" alt=""></div></div></div></div></div>' +
       '<div class="panel" id="itemsPanel"><div class="sec-t"><span class="n">2</span><h2>Selected Items</h2><span class="sp">' +
+      (RESET_ALL && !RESET_APP ? '<button type="button" class="btn sm" id="resetAll">Reset all Special Prices</button>' : '') +
       '<button type="button" class="undo" id="undo" aria-label="Undo"' + (HIST.length ? '' : ' disabled') + '>' + I.undo + '</button>' +
       '<button type="button" class="undo" id="redo" aria-label="Redo"' + (FUT.length ? '' : ' disabled') + '>' + I.redo + '</button>' +
+      (RESET_ALL && RESET_APP ? '<button type="button" class="btn sm" id="resetAll"' + (spOff() || (RESET_EMPTY_OFF && !anySpecial()) ? ' disabled' : '') + '>Reset all Special Prices</button>' : '') +
       '<button type="button" class="btn sm dark">' + I.plus + 'Add Item</button></span></div>' +
       (state.msg ? '<div class="done' + (state.msg.warn ? ' warn' : '') + '">' + esc(state.msg.t) + '</div>' : '') +
-      (function () { var n = hiRows(); if (PM_POLICY) return n && (state.saveErr || PM_BAND) ? '<div class="sp-warn' + (state.saveErr ? ' sp-err' : '') + '">' + I.info + (state.saveErr ? 'Can\'t save. ' : '') + n + ' row' + (n === 1 ? ' has a Special Price' : 's have a Special Price') + (SAVE_GT ? ' higher than the Sale (or WS) Price' : ' at or above the Sale (or WS) Price') + (state.saveErr ? ' — lower or clear ' + (n === 1 ? 'it' : 'them') + '.' : ' — not applied. Buyers pay the Sale Price.') + '</div>' : ''; return n ? '<div class="sp-warn">' + I.info + (SP_NOTE ? n + ' row' + (n === 1 ? '' : 's') + ': Special Price ≥ WS Price' : n + ' row' + (n === 1 ? ' has a Special Price' : 's have a Special Price') + ' at or above the WS Price.') + (SP_NOTE ? '' : ' Buyers will see ' + (n === 1 ? 'it' : 'them') + ' without a discount.')   /* 10-21 바이어 화면은 분홍 박스 그대로 · % · ~~WS~~ 만 빠짐 — 예전 "as regular prices" 는 틀린 말이 됨 */ + '</div>' : ''; })() +
+      (function () { var n = hiRows(); if (PM_POLICY && state.saveErr && n && (UXW_BAN || zeroRows())) return '<div class="sp-warn sp-err">' + I.info + zeroBan() + '</div>'; if (PM_POLICY) return n && (state.saveErr || PM_BAND) ? '<div class="sp-warn' + (state.saveErr ? ' sp-err' : '') + '">' + I.info + (state.saveErr ? 'Can\'t save. ' : '') + n + ' row' + (n === 1 ? ' has a Special Price' : 's have a Special Price') + (SAVE_GT ? ' higher than the Sale (or WS) Price' : ' at or above the Sale (or WS) Price') + (state.saveErr ? ' — lower or clear ' + (n === 1 ? 'it' : 'them') + '.' : ' — not applied. Buyers pay the Sale Price.') + '</div>' : ''; return n ? '<div class="sp-warn">' + I.info + (SP_NOTE ? n + ' row' + (n === 1 ? '' : 's') + ': Special Price ≥ WS Price' : n + ' row' + (n === 1 ? ' has a Special Price' : 's have a Special Price') + ' at or above the WS Price.') + (SP_NOTE ? '' : ' Buyers will see ' + (n === 1 ? 'it' : 'them') + ' without a discount.')   /* 10-21 바이어 화면은 분홍 박스 그대로 · % · ~~WS~~ 만 빠짐 — 예전 "as regular prices" 는 틀린 말이 됨 */ + '</div>' : ''; })() +
       bulkHTML() +
       '<table><thead><tr><th class="c-cb">' + cbHTML(all.on, all.mix, 'data-selall="1"') + '</th><th>Item Name</th><th>Style #</th><th>Option1</th><th>Option2</th><th>Availability</th>' +
-      '<th>WS Price</th><th>Sale Price<span class="eye">' + I.eye + '</span></th><th>Special Price<span class="eye">' + I.eye + '</span></th><th>MSRP<span class="eye">' + I.eye + '</span></th><th></th></tr></thead>' +
+      '<th>WS Price</th><th>Sale Price' + (EYE_ALL ? eyeBtn('sale', 'Sale Price') : '<span class="eye">' + I.eye + '</span>') + '</th><th>Special Price' + (SP_EYE ? '<button type="button" class="eye btn-eye" id="spEye" aria-pressed="' + !state.spOff + '" aria-label="' + (state.spOff ? 'Show Special Price' : 'Hide Special Price') + '">' + (state.spOff ? I.eyeOff : I.eye) + '</button>' : '<span class="eye">' + I.eye + '</span>') + '</th><th>MSRP' + (EYE_ALL ? eyeBtn('msrp', 'MSRP') : '<span class="eye">' + I.eye + '</span>') + '</th><th></th></tr></thead>' +
       '<tbody>' + rowsHTML() + '</tbody></table></div>';
     $('body').innerHTML = h;
     bind();
   }
-  function render() { var y = window.scrollY; document.documentElement.toggleAttribute('data-saveerr', !!state.saveErr); renderBody(); window.scrollTo(0, y); }
+  /* 11-02 "아이템에서 가격수정을 해서 라인시트에서 열었을때에 달라졌을경우에는 열때부터 보여주기 및 저장 금지"
+     열 때 이미 Special ≥ Sale(없으면 WS)인 행이 있으면(= 아이템 쪽 가격이 바뀐 것) Save 누른 것처럼 빨간 띠 + 빨간 테두리부터, 저장도 막힘.
+     라인시트에서 직접 친 값은 예전처럼 Save 때만. 문제 행을 다 고치면 띠가 사라지고 다시 Save 때 규칙으로. false 면 예전(열 때는 표시 없음) · 백업 …backup-before-open-inv.html */
+  var OPEN_INV = true;
+  function openInv() { if (OPEN_INV && PM_POLICY && hiRows() > 0) state.saveErr = true; }
+  function render() { if (OPEN_INV && state.saveErr && !hiRows()) state.saveErr = false; var y = window.scrollY; document.documentElement.toggleAttribute('data-saveerr', !!state.saveErr); renderBody(); window.scrollTo(0, y); }
 
   function bind() {
     var B = $('body');
@@ -546,7 +702,12 @@
     B.querySelectorAll('[data-selall]').forEach(function (b) {
       b.onclick = function () { var g = groupState(allLeaves()); allLeaves().forEach(function (l) { state.sel[l.key] = !g.on; }); render(); };
     });
-    B.querySelectorAll('[data-tg]').forEach(function (b) { b.onclick = function () { state.closed[b.dataset.tg] = !state.closed[b.dataset.tg]; render(); }; });
+    B.querySelectorAll('[data-tg]').forEach(function (b) { b.onclick = function () {
+      var id = b.dataset.tg;
+      if (!TG_ALL) { state.closed[id] = !state.closed[id]; render(); return; }
+      var it = ITEMS.filter(function (x) { return x.id === id; })[0], open = !!state.closed[id];   /* 11-03 "안열렸으면 ⌄이고 열려있는건 ⌃" — 닫혀 있으면 전부 열고, 열려 있으면(팩 일부만 열려도) 전부 닫음 */
+      state.closed[id] = !open; tgPacks(it).forEach(function (lf) { packSet(lf, open); }); render();
+    }; });
     B.querySelectorAll('[data-fold]').forEach(function (b) { b.onclick = function () { var k = b.dataset.fold; if (LS_ALL_SIZES) state.packShut[k] = state.packShut[k] === undefined ? !LS_FOLD_SHUT : !state.packShut[k]; else state.open[k] = !state.open[k]; render(); }; });
     B.querySelectorAll('[data-mode]').forEach(function (b) { b.onclick = function () { state.mode = b.dataset.mode; render(); var i = $('bVal'); if (i) i.focus(); }; });
     var bv = $('bVal');
@@ -558,6 +719,9 @@
     if ($('bApply')) $('bApply').onclick = apply;
     if ($('bClear')) $('bClear').onclick = function () { state.sel = {}; render(); };
     $('undo').onclick = undo; $('redo').onclick = redo;
+    if ($('resetAll')) $('resetAll').onclick = resetAllAsk;
+    document.querySelectorAll('[data-eye]').forEach(function (b) { b.onclick = function () { state.colOff = state.colOff || {}; state.colOff[b.dataset.eye] = !state.colOff[b.dataset.eye]; render(); }; });
+    if ($('spEye')) $('spEye').onclick = function () { state.spOff = !state.spOff; if (state.spOff) { state.sel = {}; state.msg = null; } else openInv(); render(); };   /* 다시 켜면 역전 값은 열 때와 같이 빨간 띠부터(OPEN_INV) */
     /* 칸 직접 입력 — 상품 줄 = 그 상품 전체, 줄 = 그 줄(팩이면 팩 안 사이즈 전부), 사이즈 줄 = 그 사이즈. 포커스를 떠나면 소수 둘째 자리 */
     B.querySelectorAll('[data-sp]').forEach(function (inp) {
       inp.onchange = function () {
@@ -572,7 +736,7 @@
     });
   }
 
-  renderTop(); $('saveBtn').onclick = onSave; render();
+  renderTop(); $('saveBtn').onclick = onSave; openInv(); render();
   window.__ls = { ITEMS: ITEMS, state: state };
 })();
 </script>

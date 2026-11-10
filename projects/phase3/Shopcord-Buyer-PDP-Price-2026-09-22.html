@@ -1066,7 +1066,11 @@
   /* 옵션마다 값이 달라도 범위($19.50 – $23.00)를 쓰지 않고 최저가에 `~`($19.50~)만 붙인다.
      2026-09-30 "range를 보여주지 않고 up to nn%, $00.00~ 이런식으로" · 되돌리려면 false (범위로 돌아간다) */
   var FROM_PRICE = true;
-  function moneyRange(r) { return r.lo === r.hi ? money(r.lo) : FROM_PRICE ? money(r.lo) + '~' : money(r.lo) + ' – ' + money(r.hi); }
+  /* 11-04 PM 정책(사용자 "체크하면 무조건 ~" · "바이어 화면도 똑같이"): Price per variant 를 켠 상품은 값이 다 같아도 최저가 뒤 ~, 끈 상품은 ~ 없음(어드민 아이템 리스트와 같은 규칙).
+     false 면 바로 전(변형 값이 다를 때만 ~) · 백업 …backup-before-tilde-pv.html */
+  var TILDE_PV = true;
+  function pdpPV() { return VARIANT_PRICE && ADMIN_DATA; }   /* 이 PDP 상품 = 어드민 데모(따로 가격을 가진 컬러가 있음) = 켬 */
+  function moneyRange(r) { if (TILDE_PV && FROM_PRICE) return money(r.lo) + (pdpPV() ? '~' : ''); return r.lo === r.hi ? money(r.lo) : FROM_PRICE ? money(r.lo) + '~' : money(r.lo) + ' – ' + money(r.hi); }
   /* 파는 단위 하나의 값 */
   /* 10-15 최악의 데이터에서 찾음: 평균 개당가 × 86pcs 는 소수 오차로 합계가 $10,887.51 (카트는 $10,887.50) →
      최악의 데이터에선 행에 쓰는 팩 금액(packOf = Σ 사이즈 값 × 팩 안 수량)을 그대로 쓴다. 기본 데이터는 두 계산이 같아 그대로 둔다 */

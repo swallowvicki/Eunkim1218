@@ -353,8 +353,14 @@
   /* 옵션마다 값이 달라도 범위($19.50 – $23.00)를 쓰지 않고 최저가에 `~`($19.50~)만 붙인다.
      2026-09-30 "range를 보여주지 않고 up to nn%, $00.00~ 이런식으로" · 되돌리려면 false (범위로 돌아간다) */
   var FROM_PRICE = true;
+  /* 11-04 PM 정책(사용자 "체크하면 무조건 ~" · "바이어 화면도 똑같이"): Price per variant 를 켠 상품은 값이 다 같아도 최저가 뒤 ~, 끈 상품은 ~ 없음(어드민 아이템 리스트와 같은 규칙).
+     false 면 바로 전(변형 값이 다를 때만 ~) · 백업 …backup-before-tilde-pv.html */
+  var TILDE_PV = true, CUR_PV = null;
+  /* 켬 여부 = 변형 값을 따로 가진 상품(same() 로 만든 한 값 상품 · 변형 1개는 끔). 가격 케이스 카드는 전부 켬 */
+  function isPV(it) { return !!it.cv || (it.v.length > 1 && it.v.some(function (p) { return p !== it.v[0]; })); }
   function range(arr) {
     var lo = Math.min.apply(null, arr), hi = Math.max.apply(null, arr);
+    if (TILDE_PV && CUR_PV != null && FROM_PRICE) return money(lo) + (CUR_PV ? '~' : '');
     return hi - lo < 0.005 ? money(lo) : FROM_PRICE ? money(lo) + '~' : money(lo) + ' – ' + money(hi);
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -408,6 +414,7 @@
     return '<div class="card-price' + (allSp ? ' is-special' + (SP_WIDE ? ' is-wide' : '') : '') + '">' + (allSp ? '<div class="pc-tag">Special Price</div>' : '') + discHTML(ap, 'pay') + '</div>';
   }
   function priceHTML(it) {
+    CUR_PV = isPV(it);
     if (it.cv) return caseHTML(it);
     var v = availV(it), t = state.priceType;
     if (it.off) {

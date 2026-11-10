@@ -471,6 +471,28 @@
   .ci.is-cx .thumb { opacity: .45; }
   .osec h2.is-red { color: var(--red); }
   .badge.b-canceled { background: #f6eef1; color: #9e4a5e; }
+  /* ══ 11-03 Shipping 상세(Figma Buyer_FGpay_Shipping Tab) — Items 카드 = Order Detail(In-progress)과 같은 상품 줄 + 가격 표(변형별) ══ */
+  .shp-o { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 4px; }
+  .shp-o b { font-size: 20px; line-height: 28px; font-weight: 700; }
+  .shp-o svg { width: 16px; height: 16px; color: var(--fg-2); }
+  .shp-o + p { margin: 0; font-size: 12px; line-height: 16px; color: var(--fg-2); }
+  .shp-amt { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .shp-amt > b { font-size: 26px; line-height: 32px; font-weight: 700; }
+  .shp-amt > span { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; font-size: 12px; color: var(--fg-2); }
+  .badge.b-delivered { background: #e9f5ee; color: #2f7d4f; }
+  .shp-h { display: flex; align-items: center; justify-content: space-between; margin: 0; cursor: pointer; }
+  .shp-h h2 { margin: 0 !important; }
+  .shp-h svg { width: 16px; height: 16px; color: var(--fg-2); transition: transform .15s; }
+  .osec.is-shut .shp-h svg { transform: rotate(180deg); }
+  .osec.is-shut .shp-body { display: none; }
+  .shp-body { margin-top: 12px; }
+  .shp-body .ci:first-child { border-top: 0; padding-top: 0; }
+  .shp-tot { display: flex; justify-content: space-between; margin-top: 12px; background: #f4f4f4; border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .shp-tot b { font-weight: 600; }
+  .shp-kv { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 14px; color: var(--fg-2); }
+  .shp-kv b { font-weight: 400; color: var(--fg); display: inline-flex; align-items: center; gap: 6px; }
+  .shp-ic { width: 28px; height: 28px; border: 1px solid var(--line-2); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; }
+  .shp-ic svg { width: 14px; height: 14px; }
   .amt-box { background: #f4f4f4; border-radius: 8px; padding: 4px 12px; }
   .amt-box div { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; line-height: 18px; }
   .amt-box div + div { border-top: 1px solid var(--line-2); }
@@ -528,6 +550,7 @@
       <button type="button" data-view="order">Order 상세</button>
       <button type="button" data-view="orderip">Order 상세 · In-progress</button>
       <button type="button" data-view="confirmed">Order Confirmed</button>
+      <button type="button" data-view="shipment">Shipping 상세</button>
     </span>
   </div>
   <div class="demo-bar-row">
@@ -692,8 +715,11 @@
   }
   var SHIP = '04/20/27';
   /* 날짜는 이 두 함수로만 — 변형(컬러 × 사이즈)마다 · Pre Pack 은 팩(컬러)마다. 'in' = In Stock → 무표기(10-14 규칙) */
-  function shipD(c, s) { var d = c.ship && c.ship[s]; return d === 'in' ? '' : (d || SHIP); }
-  function packD(c) { return c.packShip === 'in' ? '' : (c.packShip || SHIP); }
+  /* 11-03 Shipping 상세 — 배송된 묶음이라 줄마다 Est. Ship date 는 안 씀(Shipping 카드의 Shipped date). SHIP_DETAIL=false 면 Shipping 탭 화면 없음 · 백업 …backup-before-shipment.html */
+  var SHIP_DETAIL = true;
+  function noDates() { return SHIP_DETAIL && typeof state !== 'undefined' && state.view === 'shipment'; }
+  function shipD(c, s) { if (noDates()) return ''; var d = c.ship && c.ship[s]; return d === 'in' ? '' : (d || SHIP); }
+  function packD(c) { if (noDates()) return ''; return c.packShip === 'in' ? '' : (c.packShip || SHIP); }
   var SHIP_WORD = 'Est. Ship date';   /* 10-22 "Est. Ship date 04/20/27 이게 현재 정책과 맞아 이대로 해야해" — Figma 와 같은 날짜 문구. 예전 10-12 「Preorder」 대체. 'Preorder' 로 되돌리려면 이 값만 · 백업 …backup-before-est-ship.html */
   function preW(d) { return d ? SHIP_WORD + ' ' + d : ''; }
   /* ══ 최악의 데이터 (2026-10-15 "Cart와 Order List, Order Detail도 최악의 데이터가 필요해보여" ·
@@ -731,7 +757,7 @@
       qty: qty };
   }   /* 흐름 숫자 맞추기 (2026-10-12 "모든 숫자를 플로우에 맞게 다 맞춰야돼") — 어드민 데모 Pre Order 04/20/2027 과 같은 날 (2026 은 오늘보다 앞이었다) */
 
-  var state = { method: 'pre', ptype: 'sale', cart: 'full', notice: 'none', view: 'cart', items: seed('pre'), sel: {}, folded: {} };
+  var state = { method: 'pre', ptype: 'sale', cart: 'full', notice: 'none', view: window.__SHARE_VIEW === 'shipment' ? 'shipment' : 'cart', items: seed('pre'), sel: {}, folded: {} };
   function selectAll() { state.items.forEach(function (it) { if (!it.unavailable) state.sel[it.id] = true; }); }
   selectAll();
 
@@ -878,6 +904,11 @@
      행은 내는 값 + ~~WS~~ + MSRP(Special 이면 Sale 없음), %는 헤더 up to N% 하나. true 면 행마다 % · 백업 …backup-before-no-row-pct.html */
   var ROW_PCT = false;
   function offTag(p, w) { if (!ROW_PCT) return ''; var n = pctOf(p, w); return n ? '<span class="row-off' + (state.ptype === 'special' ? ' is-sp' : '') + '">' + n + '%</span>' : ''; }
+  /* 11-04 PM 정책(사용자 "체크하면 무조건 ~" · "바이어 화면도 똑같이"): Price per variant 를 켠 상품은 값이 다 같아도 최저가 뒤 ~, 끈 상품은 ~ 없음(어드민 아이템 리스트와 같은 규칙).
+     false 면 바로 전(변형 값이 다를 때만 ~) · 백업 …backup-before-tilde-pv.html */
+  var TILDE_PV = true;
+  /* 켬 여부 = 사이즈 값(bySize)이 있거나 컬러끼리 값이 다르면 켬(어드민 오더 Add Item 과 같은 판단) */
+  function itemPV(it) { return it.pv != null ? it.pv : it.colors.some(function (c) { return c.bySize || ['ws', 'sale', 'special', 'msrp'].some(function (k) { return c.price[k] !== it.colors[0].price[k]; }); }); }
   function priceHTML(it, fin) {
     var HL = headLines(it);
     var v = [], w = [];
@@ -887,6 +918,8 @@
     if (!w.length) w = [it.colors[0].price.ws];
     var lo = Math.min.apply(null, v), hi = Math.max.apply(null, v), wlo = Math.min.apply(null, w), whi = Math.max.apply(null, w);
     var t = hi - lo > 0.005 ? '~' : '', wt = whi - wlo > 0.005 ? '~' : '';
+    if (TILDE_PV) { t = wt = itemPV(it) ? '~' : ''; }
+    if (fin && ORDER_PAY_ONLY) return '<div class="price"><b>' + money(lo) + t + '</b><i>/pc</i></div>';   /* 오더 상세 머리 = 구매 가격만 */
     var wsUp = !WS_ABOVE_ONLY || wlo > lo + 0.005;   /* 10-27 사용자 · 제니 결정 — 헤더 · 카드의 ~~WS~~ 는 가장 낮은 WS 가 큰 숫자(변형마다 내는 값의 최저)보다 높을 때만. 같거나 낮으면 줄째 숨김(예: A WS 30 · Sale 없음 / B WS 40 · Sale 35 → $30.00~ 만). false 면 예전 · 백업 …backup-before-ws-above.html */
     if (state.ptype === 'special' && TICKET_453 && !(fin && ORDER_FINAL_ONLY)) {
       /* 변형마다 (Pre Pack 은 팩 안 사이즈마다) Special 대 WS 할인율 — 최대를 up to N% 로 */
@@ -972,6 +1005,10 @@
      false 면 바로 전(낸 값만 · 짧은 줄) · 백업 …backup-before-order-ticket.html */
   var ORDER_TICKET = true;
   if (ORDER_TICKET) ORDER_FINAL_ONLY = false;
+  /* 11-05 Figma 코멘트(Kelly, cc Brian) "현재 프로덕션에서는 구매 가격만 표시 … WS와 MSRP는 노출하지 않고 … variant별로 가격을 표시하되, 기존과 동일하게 구매 가격만" →
+     바이어 Order 상세(Vendor-created · In-progress 박스) = 변형마다 Price 한 칸만. WS · MSRP 칸 없음, 값은 검정(할인색 없음 — 비교할 값이 없어서), 머리 값도 % · ~~WS~~ · Special 이름표 없이 `$N~/pc`.
+     카트 · 체크아웃 · 어드민 오더는 그대로. false 면 바로 전(카트와 같은 표) · 백업 …backup-before-order-pay-only.html */
+  var ORDER_PAY_ONLY = true, inOrd = false;
   /* 세로 표 하나 — rows: [{ s, label, q? , d? }]. qty 칸은 q 가 있을 때만. 날짜가 모두 같으면 표 밑 한 줄, 다르면 사이즈 밑마다 */
   /* ══ Pre Pack = A1 (2026-10-14 PDP 와 같게) — 표 머리는 상품마다 한 번 `Size (per pc) · Price · WS · MSRP`, 컬러 줄 = 이름 + 오른쪽 팩 값,
      사이즈 값이 다를 때만 S · M · L 줄(`(2)` 는 위 S-M-L / 2-2-2 가 말함), 다 같으면 이름표 없는 숫자 한 줄, 맨 아래 = 날짜 · 수량 칸.
@@ -996,13 +1033,14 @@
   function a1Cols(it) {
     var w = false, m = false;
     lines(it).forEach(function (l) { it.sizes.forEach(function (sz) { var pr = vprice(it, l.c, sz); if (pr.ws > payOf(pr) + 0.005) w = true; if (msrpV(pr) > 0) m = true; }); });
+    if (ORDER_PAY_ONLY && inOrd) w = m = false;
     /* 10-26 "1번으로 해줘" — 라벨 12px 에서 카드 안 이름 자리가 38px 라 15자 이름이 단어 중간에서 끊김(Toddl/er) → 가격 칸 58/48/48 → 50/40/40, 이름 자리 약 62px(PDP 처럼 두 줄).
        카트 카드 · 오더 상세 · In-progress 박스 공통. CART_COLS_NARROW = false 면 예전 · 백업 …backup-before-narrow-cols.html */
     var pw = CART_COLS_NARROW ? 50 : 58, cw = CART_COLS_NARROW ? 40 : 48;
     return { ws: w, msrp: m, tpl: 'minmax(0, 1fr) ' + pw + 'px' + (w ? ' ' + cw + 'px' : '') + (m ? ' ' + cw + 'px' : '') };
   }
   function a1Cells(it, c, sz, cols) {
-    var pr = vprice(it, c, sz), p = payOf(pr), disc = pr.ws > p + 0.005;
+    var pr = vprice(it, c, sz), p = payOf(pr), disc = pr.ws > p + 0.005 && !(ORDER_PAY_ONLY && inOrd);
     return '<span class="a1-p' + (disc ? ((PM_POLICY ? isSpAt(pr) : state.ptype === 'special') ? ' is-sp' : ' is-sale') : '') + '">' + money(p).slice(1) + '</span>' +
       (cols.ws ? '<span class="a1-c">' + (disc ? '<s>' + money(pr.ws).slice(1) + '</s>' : '\u2014') + '</span>' : '') +
       (cols.msrp ? '<span class="a1-c">' + (msrpV(pr) > 0 ? money(pr.msrp).slice(1) : '\u2014') + '</span>' : '');
@@ -1079,6 +1117,7 @@
   function render() {
     persist();
     chrome(state.view);
+    if (state.view === 'shipment') return renderShipment();
     if (state.view === 'orders') return renderOrders();
     if (state.view === 'order') return renderOrder();
     if (state.view === 'confirmed') return renderConfirmed();
@@ -1386,7 +1425,8 @@
     $('cartFoot').hidden = !(v === 'cart' || v === 'checkout');
     $('oFoot').hidden = !(v === 'order' && o && o.status === 'vendor-created');
     $('cFoot').hidden = v !== 'confirmed';
-    $('tabs').hidden = !(v === 'orders' || v === 'order');
+    $('tabs').hidden = !(v === 'orders' || v === 'order' || v === 'shipment');
+    $('tabs').querySelectorAll('[data-tab]').forEach(function (t) { t.classList.toggle('is-on', t.dataset.tab === (v === 'shipment' ? 'shipping' : 'orders')); });
     $('cartFoot').classList.toggle('is-ck', CO_FIGMA && v === 'checkout');
     $('phone').classList.toggle('vc-outline', VC_BADGE_OUTLINE);
   }
@@ -1410,7 +1450,8 @@
     });
   }
 
-  function renderOrder() {
+  function renderOrder() { inOrd = true; try { renderOrder0(); } finally { inOrd = false; } }
+  function renderOrder0() {
     var o = curOrder();
     if (!o || !o.items) { go('orders'); return; }
     $('navTitle').textContent = o.id;
@@ -1477,6 +1518,36 @@
     h += '<div class="osec ship-to"><h2>Shipping Address</h2><b>' + esc(CONTACT.name) + '</b><p>' + esc(ADDR.name) + '<br>' + ADDR.lines.map(esc).join('<br>') + '</p></div>';
     return h + '<button type="button" class="rel">' + J.box + 'View Related Shipments</button>';
   }
+  /* ══ Shipping 상세 (Figma Buyer_FGpay_Shipping Tab · Delivered) — Items (N items) 펼치기 안 = Order Detail 과 같은 ciRow(사진 · 이름 · 컬러 | 배지 · 금액 · pcs + 변형별 가격 표) ══ */
+  var SHPD = { id: 'SHP-20260929-022-1', order: 'ORD-20260929-022', fee: 20, paid: 'Oct 20, 2026', shipped: 'Oct 15, 2026', track: 'NRDH0588002X' };
+  /* 11-03 "원래 UI팀이 해줬었는데 … 저렇게 너가해준듯 하는게 맞아?" → UI팀 카드 그대로(사진 · 이름 · 컬러 | 배지 · 값 · 수량), 개당 값 하나 대신 그 상품 금액 합계 + pcs(Pre = N pack · N pcs).
+     변형별 가격 표는 넣지 않음(Order Detail 에 있음 — 위 ORD 링크). false 면 Order Detail 표를 펼친 모양 · 백업 …backup-before-ship-compact.html */
+  var SHIP_COMPACT = true;
+  function shipRow(it) {
+    var names = it.colors.filter(function (c) { return lines(it).some(function (l) { return l.c === c; }); }).map(function (c) { return c.name; }).filter(Boolean).join(', ');
+    var pk = it.method === 'pre' ? lines(it).reduce(function (t, l) { return t + l.q; }, 0) : 0;
+    return '<div class="ci"><div class="ci-top"><div class="thumb" style="background-image:url(\'' + it.img[0] + '\')"></div>' +
+      '<div class="ci-i"><b>' + esc(it.name || it.style) + '</b>' + (names ? '<span>' + esc(names) + '</span>' : '') + '</div>' +
+      '<div class="ci-r"><span class="pill ' + (it.method === 'pre' ? 'pre">Pre Pack' : 'open">Open Pack') + '</span><b>' + money(itemTotal(it)) + '</b><span>' +
+      (pk ? pk + ' pack' + (pk === 1 ? '' : 's') + ' · ' : '') + itemPcs(it) + ' pcs</span></div></div></div>';
+  }
+  function renderShipment() {
+    var o = ORDERS.filter(function (x) { return x.id === SHPD.order; })[0], its = o.items, sub = oAmt(o);
+    $('navTitle').textContent = SHPD.id;
+    $('navBack').innerHTML = I.back + 'Back';
+    var n = its.length;
+    var h = '<div class="shp-o"><b>' + SHPD.order + '</b>' + I.chev.replace('<svg', '<svg style="transform:rotate(-90deg)"') + '</div><p>' + esc(o.vendor) + ' · ' + esc(o.date) + '</p>';
+    h += '<div class="osec"><div class="shp-amt"><b>' + money(sub + SHPD.fee) + '</b><span><span class="badge b-delivered">Delivered</span>' + SHPD.paid + '</span></div><div class="pay-box">' + J.card + esc(o.payLine || CARD) + '</div></div>';
+    h += '<div class="osec' + (state.shipShut ? ' is-shut' : '') + '" id="shpItems"><div class="shp-h" role="button" tabindex="0" aria-expanded="' + !state.shipShut + '"><h2>Items (' + n + ' item' + (n === 1 ? '' : 's') + ')</h2>' + I.chev.replace('<svg', '<svg style="transform:rotate(180deg)"') + '</div>' +
+      '<div class="shp-body">' + its.map(function (it) { return SHIP_COMPACT ? shipRow(it) : ciRow(it, false); }).join('') + '<div class="shp-tot"><span>Total</span><b>' + money(sub) + '</b></div></div></div>';
+    h += '<div class="osec"><h2>Payment</h2><div class="shp-kv"><span>Shipment order amount</span><b>' + money(sub) + '</b></div><div class="shp-kv"><span>Shipping fee</span><b>' + money(SHPD.fee) + '</b></div><div class="shp-kv"><span>Transaction date</span><b>' + SHPD.paid + '</b></div>' +
+      '<div class="shp-tot"><span>Total Charged</span><b>' + money(sub + SHPD.fee) + '</b></div></div>';
+    h += '<div class="osec"><h2>Shipping</h2><div class="shp-kv"><span>Status</span><b><span class="badge b-delivered">Delivered</span></b></div><div class="shp-kv"><span>Shipped date</span><b>' + SHPD.shipped + '</b></div>' +
+      '<div class="shp-kv"><span>Tracking #</span><b>' + SHPD.track + '<span class="shp-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2.5h4v4M13.5 2.5L7.5 8.5M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3"/></svg></span><span class="shp-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="5" width="8.5" height="8.5" rx="1.5"/><path d="M3 10.5V3.5A1 1 0 0 1 4 2.5h7"/></svg></span></b></div></div>';
+    $('screen').innerHTML = h;
+    var hd = $('shpItems').querySelector('.shp-h');
+    hd.onclick = function () { state.shipShut = !state.shipShut; render(); };
+  }
   function renderConfirmed() {
     var c = state.confirmed || { id: curOrder().id, total: oAmt(curOrder()) };
     function f(l, v) { return '<div class="cf"><span>' + l + '</span>' + v + '</div>'; }
@@ -1523,7 +1594,7 @@
   function toPLP(e) { if (window.__SHARE_PAGE) { e.preventDefault(); window.parent.postMessage({ type: 'share-go', page: 'plp' }, '*'); } }
   $('cBack').onclick = toPLP;
   $('tabs').querySelectorAll('[data-tab]').forEach(function (t) {
-    t.onclick = function (e) { var k = t.dataset.tab; if (k === 'orders') { e.preventDefault(); go('orders'); } else if (k === 'linesheet') toPLP(e); else e.preventDefault(); };
+    t.onclick = function (e) { var k = t.dataset.tab; if (k === 'orders') { e.preventDefault(); go('orders'); } else if (k === 'shipping' && SHIP_DETAIL) { e.preventDefault(); go('shipment'); } else if (k === 'linesheet') toPLP(e); else e.preventDefault(); };
   });
 
   /* ══ 토스트 · 삭제 확인 ══ */
@@ -1610,7 +1681,7 @@
           var mv = it.sizes.map(function (sz) { return msrpV(vprice(it, c, sz)); }).filter(function (v) { return v > 0; });
           if (!mv.length) return '';
           var lo = Math.min.apply(null, mv), hi = Math.max.apply(null, mv);
-          return '<p class="s-msrp">MSRP ' + money(lo) + (hi - lo > 0.005 ? '~' : '') + '</p>';
+          return '<p class="s-msrp">MSRP ' + money(lo) + ((TILDE_PV ? itemPV(it) : hi - lo > 0.005) ? '~' : '') + '</p>';
         })() : '') + '</div>' +
         (hasColor ? '<span class="s-label">' + esc(it.optColor) + '</span><div class="chips">' + names.map(function (n) {
           var q = cnt(n);
@@ -1776,7 +1847,7 @@
   });
   document.querySelectorAll(window.__combo8 ? '.pt-old' : '.pt-new').forEach(function (b) { b.hidden = true; });   /* 가격 조합 8가지 (COMBO8) */
   if (!window.__spOver) document.querySelectorAll('[data-ptype="c9"]').forEach(function (b) { b.hidden = true; });
-  var cur = { view: 'cart', method: 'pre', ptype: window.__combo8 ? 'c5' : 'sale', cart: 'full', notice: '', data: 'normal', pcase: 'off' };
+  var cur = { view: window.__SHARE_VIEW === 'shipment' ? 'shipment' : 'cart', method: 'pre', ptype: window.__combo8 ? 'c5' : 'sale', cart: 'full', notice: '', data: 'normal', pcase: 'off' };
   function mark() {
     ['view', 'method', 'ptype', 'cart', 'data', 'pcase'].forEach(function (k) {
       document.querySelectorAll('[data-' + k + ']').forEach(function (b) { b.classList.toggle('is-current', b.dataset[k] === cur[k]); });
