@@ -259,6 +259,8 @@
   .scb-av svg { width: 16px; height: 16px; }
   .scb-acct b { flex: 1; font-size: 14px; font-weight: 700; color: #1f1f1f; }
   .scb-acct > svg { width: 16px; height: 16px; color: #a3a3a3; }
+  /* 11-12 세로로 쌓이는 숫자 칸 = 같은 폭 숫자(Figma Monospace 와 같음) — 롤백: TNUM_COLS = false */
+  html.tnum-cols .pr, html.tnum-cols .pr2, html.tnum-cols .amt, html.tnum-cols .ai-pr, html.tnum-cols .ai-upr { font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -323,6 +325,8 @@
      가격 일부 다름, 날짜 In Stock · 04/20/2027 · 05/15/2027 · 06/01/2027 섞임. 톱니 메뉴 「DATA → 최악의 데이터」.
      In Stock 줄은 날짜가 없어 `In Stock` 묶음으로(Figma 에 없는 이름 — 확인 필요), 날짜 칸은 `—` */
   var WORST = false;
+  var TNUM_COLS = true;   /* 11-12 숫자 칸 tabular-nums (false = 예전처럼 글자마다 다른 폭) */
+  document.documentElement.classList.toggle('tnum-cols', TNUM_COLS);
   var WORST_N = 64, WORST_C = 32;
   var WORST_COLOR_NAMES = COLORS30.concat(['Olive Drab Knit', 'Mint Green Lawn']);
   for (var wc = 1; WORST_COLOR_NAMES.length < WORST_C; wc++) WORST_COLOR_NAMES.push('Swatch No. ' + ('000' + wc).slice(-4));
@@ -409,9 +413,19 @@
      드로어 · 오더 줄 Price · Amount 가 같은 값. 값 앞에 이름표(Special / Sale / WS). false 면 바로 전(라인시트 -, Sale 기준) · 백업 …backup-before-ls-special.html */
   var CO_LS_SPECIAL = true;
   var LS_SP = { 'FG-SS25-104|Sky Blue': { S: 15.00, M: 17.00, L: 18.80 }, 'FG-SS25-999|Burgundy Velvet': { S: 20.50, M: 20.50, L: 20.50 } };
+  /* 11-17 Mixed 팩 케이스(사용자 "목업에도 Mixed 케이스 보이게") — 라인시트 Summer Collection 2026 에서 드레스 Light Wash Blue 의 M 만 Special $15.00
+     → Add Item 팩 줄 「Mixed $108.00 /pack」(S Sale 19.50 · M Special 15.00 · L Sale 19.50), 상품 줄 $15.00~ — Figma 케이스 화면과 같은 값.
+     false 면 바로 전(Light Wash Blue = Sale $117.00) · 백업 …backup-before-mixed-demo.html */
+  var MIXED_DEMO = true;
+  if (MIXED_DEMO) LS_SP['FG-SS25-999|Light Wash Blue'] = { M: 15.00 };
   /* 11-09 Kelly 코멘트(프로덕션은 라인시트 Special Price 눈을 꺼도 오더에 Special 이 들어감) → 사용자 "Special Price를 노출하는경우(눈이 있는경우)에만 Special Price 노출하면 될거같아요. 최종 결제 가격을 노출" ·
      "목업에도 눈 끈 라인시트 케이스 넣어줘" → Linesheet 칸 = 드롭다운, 두 번째 라인시트 Fall Preview 2026 = Special Price 눈 끔(같은 아이템 · 같은 Special 값) → Special 안 씀, Sale → WS.
      공유 ⑤-2 = window.__SHARE_VIEW 'create-eyeoff'. CO_LS_EYE=false 면 바로 전(라인시트 하나 · 칸 글자) · 백업 …backup-before-ls-eye.html */
+  /* 11-17 Add Item 드로어 팩 줄 이름표 — 팩 값은 사이즈 값의 합이라 Special · Sale · WS 가 섞일 수 있음.
+     사용자 "Mixed로 하기로 했어": 사이즈가 다 같은 종류면 그 이름표(Sale · Special · WS), 섞이면 「Mixed」.
+     PACK_MIXED=false 면 바로 전(섞이면 이름표 없음) · PACK_LABEL=false 면 팩 줄 이름표 늘 없음 · 사이즈 줄 · Open 변형 줄 이름표는 그대로 · 백업 …backup-before-pack-no-label.html */
+  var PACK_LABEL = true;
+  var PACK_MIXED = true;
   var CO_LS_EYE = true;
   var LS_LIST = [{ name: 'Summer Collection 2026', eye: true }, { name: 'Fall Preview 2026', eye: false }];
   var LS_IX = CO_LS_EYE && window.__SHARE_VIEW === 'create-eyeoff' ? 1 : 0;
@@ -686,7 +700,7 @@
   function unitsOf(ii) {
     var it = DITEMS[ii], u = [];
     it.colors.forEach(function (c) {
-      if (it.method === 'pre') u.push({ key: 'd|' + ii + '|' + c.name, n: c.name, label: c.name + ' / Size Pack', pr: packPrice(it, c, AI_PAY_PRICE ? 'sale' : 'ws'), ws: packPrice(it, c, 'ws'), unit: '/pack', it: it, c: c, k: kindOf(c, it.sizes) });
+      if (it.method === 'pre') u.push({ key: 'd|' + ii + '|' + c.name, n: c.name, label: c.name + ' / Size Pack', pr: packPrice(it, c, AI_PAY_PRICE ? 'sale' : 'ws'), ws: packPrice(it, c, 'ws'), unit: '/pack', it: it, c: c, k: PACK_LABEL ? (kindOf(c, it.sizes) || (PACK_MIXED ? 'Mixed' : '')) : '' });
       else it.sizes.forEach(function (s) { u.push({ key: 'd|' + ii + '|' + c.name + '|' + s, n: c.name, s: s, label: c.name + ' / ' + s, pr: vprice(c, s)[AI_PAY_PRICE ? 'sale' : 'ws'], ws: vprice(c, s).ws, k: kindOf(c, [s]) }); });
     });
     return u;

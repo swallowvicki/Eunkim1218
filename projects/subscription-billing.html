@@ -1577,6 +1577,34 @@ body.an-open .proto-fab, body.an-open .proto-panel { display: none; }
 /* Updated badge — marks mails changed on a given day so they can be found in the list */
 .proto-upd { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: var(--badge-blue); color: var(--badge-blue-fg); font-size: 9.5px; line-height: 14px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; vertical-align: 1px; }
 .em-meta .proto-upd { display: inline-block; width: auto; margin-top: 0; justify-self: start; }
+/* PO — prices by variant (Phase 3 item pricing) · Orders on the Free plan */
+.po-per { margin-left: 3px; font-size: 9.5px; font-weight: 400; color: #8a8378; }
+.po-tbl tr.has-sizes td { border-bottom: 0; padding-bottom: 2px; }
+.po-tbl tr.po-sizes td { padding-top: 0; font-size: 10px; color: #6f685f; }
+.po-sz { white-space: nowrap; }
+.po-runsum { font-size: 10.5px; white-space: nowrap; }
+.po-tbl tr.po-sizes td .po-grid { border-collapse: collapse; table-layout: auto; width: auto; margin: 4px 0 6px; }
+.po-grid th, .po-grid td { border: 0; padding: 4px 0; font-size: 9.5px; text-align: center; white-space: nowrap; }
+.po-grid td + td { border-left: 1px solid #ebe7e2; }
+.po-grid th { width: 54px; padding-left: 7px; text-align: left; font-weight: 700; font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase; color: #8a8378; border-right: 1px solid #ddd8d2; }
+.po-grid tr.z th, .po-grid tr.z td { background: #f5f3f0; color: #5e5851; font-weight: 600; border-bottom: 1px solid #ddd8d2; }
+.po-grid tr.q td { color: #1a1a1a; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.po-tbl tr.po-sizes .po-grid td, .po-tbl tr.po-sizes .po-grid th { padding: 4px 0; border-bottom-width: 0; }
+.po-tbl tr.po-sizes .po-grid th { padding-left: 7px; }
+.po-grid th { width: 62px; }
+.po-grid tr.p td, .po-grid tr.p th { border-top: 1px solid #ebe7e2; }
+.po-grid tr.p td { color: #5e5851; font-size: 9.5px; font-variant-numeric: tabular-nums; }
+.po-tbl tr.po-sizes .po-grid tr.z td, .po-tbl tr.po-sizes .po-grid tr.z th { border-bottom: 1px solid #ddd8d2; font-size: 9.5px; }
+.po-tbl tr.po-sizes .po-grid td, .po-tbl tr.po-sizes .po-grid th { border: 1px solid #ddd8d2; }
+.po-tbl tr.po-sizes .po-grid th { width: 62px; min-width: 62px; box-sizing: border-box; }
+.po-tbl.cont { margin-top: 18px; }
+.po-lock { display: inline-flex; align-items: center; gap: 5px; color: #8a8378; }
+.po-lock svg { width: 11px; height: 11px; }
+/* Number columns sit side by side and all align right, so each one after another keeps 18px of air
+   on its left: PACKS and TOTAL QTY read as two headings, not one. */
+.po-tbl th.n + th.n, .po-tbl td.n + td.n { padding-left: 18px; }
+.ord-lock { display: inline-flex; align-items: center; gap: 5px; color: var(--fg-muted); font-size: 13px; }
+.ord-lock svg { width: 13px; height: 13px; }
 </style>
 </head>
 <body>
@@ -2065,6 +2093,10 @@ const SCENARIOS = {
   orderDetailNew: {
     label: 'Order detail — not yet confirmed', hint: 'No PO before confirmation · Download PO disabled',
     screen: 'orderDetail', ord: 'ORD-20240312', sub: 'active', cards: ['visa', 'mc'], history: true,
+  },
+  ordersListFree: {
+    label: 'Order List — Free plan', hint: 'Buyer locked · order detail and PO download open the subscribe offer (§3.2.1)',
+    screen: 'orders', sub: 'free', cards: [], history: false,
   },
 };
 // Each scenario's cards as authored — a card saved or reordered during one visit does not leak into the next.
@@ -5325,11 +5357,11 @@ function emailPreview() {
 const PO_LINES = [
   { style: 'BB-1042', item: 'Linen Camp Shirt',
     sizes: ['S','M','L'], pack: '1-2-1', unit: 21.50,
-    colors: [ { c: 'Ecru',  packs: 6, q: [6,12,6] },
+    colors: [ { c: 'Ecru',  packs: 6, q: [6,12,6], disc: { v: 10, u: '%' } },
               { c: 'Sage',  packs: 4, q: [4, 8,4] } ] },
   { style: 'BB-2210', item: 'Wide-Leg Trouser',
     sizes: ['S','M','L','XL'], pack: '1-2-2-1', unit: 34.00,
-    colors: [ { c: 'Black', packs: 5, q: [5,10,10,5] } ] },
+    colors: [ { c: 'Black', packs: 5, q: [5,10,10,5], disc: { v: 2, u: '$' } } ] },
   { style: 'BB-0788', item: 'Ribbed Knit Tank',
     sizes: ['S','M','L'], pack: '2-2-2', unit: 12.00,
     colors: [ { c: 'Butter', packs: 3, q: [6,6,6] } ] },
@@ -5360,146 +5392,207 @@ const PO_PREORDER = 'Mar 15, 2027';
    Delivery row in the header instead.
    Reversible: if Gap G-2e lands on "generated on demand", a re-issued PO could carry
    tracking and the field earns its place. */
+/* Prices are per VARIANT (colour × size). `price` holds one price per size for that colour;
+   a line without it is sold at one price, `unit`. A pre-pack is priced per pack — each size's
+   price times its count in the pack — and an open line prices every size on its own row. */
+const PO_LINES_VARIANT = [
+  { style: 'FG-SS25-999', item: 'Relaxed Linen Dress', open: true, sizes: ['S','M','L'],
+    colors: [ { c: 'Heathered Olive', q: [1,2,3], price: [18.00, 19.50, 21.00] },
+              { c: 'Burgundy Velvet', q: [2,2,2], price: [21.50, 21.50, 21.50] } ] },
+  { style: 'FG-SS25-104', item: 'Relaxed Linen Shirt Relaxed Linen Shirt', open: true, sizes: ['S','M','L'],
+    colors: [ { c: 'Sky Blue', q: [1,2,3], price: [16.00, 18.00, 19.80] },
+              { c: 'Tan',      q: [1,2,3], price: [16.00, 18.00, 19.80] } ] },
+  { style: 'FG-SS25-999', item: 'Relaxed Linen Dress', sizes: ['S','M','L'], pack: '2-2-2',
+    colors: [ { c: 'Heathered Olive', packs: 2, price: [18.00, 19.50, 21.00] },
+              { c: 'Burgundy Velvet', packs: 1, price: [21.50, 21.50, 21.50] },
+              { c: 'Rainbow Tie-Dye', packs: 1, price: [19.50, 19.50, 19.50] } ] },
+];
+const PO_SIZES_30 = [];
+for (let w = 23; PO_SIZES_30.length < 30; w++) PO_SIZES_30.push(String(w));   // Size 23–52: one option, 30 values (the item maximum)
+const PO_PRICE_30 = (base) => PO_SIZES_30.map((_, j) => j < 20 ? base : base + 2.5);
+const PO_LINES_MANY = [
+  { style: 'FG-JN27-300', item: 'Wide Leg Denim', open: true, sizes: PO_SIZES_30,
+    colors: [ { c: 'Indigo', q: PO_SIZES_30.map((_, j) => j < 14 ? (j % 4 === 0 ? 2 : 1) : 0), price: PO_PRICE_30(24.00) } ] },
+  { style: 'FG-JN27-300', item: 'Wide Leg Denim', sizes: PO_SIZES_30, pack: PO_SIZES_30.map((_, j) => j % 3 === 0 ? 2 : 1).join('-'),
+    colors: [ { c: 'Indigo', packs: 2, price: PO_PRICE_30(24.00) },
+              { c: 'Washed Black', packs: 1, price: PO_PRICE_30(25.00), disc: { v: 5, u: '%' } } ] },
+];
 const money = (v) => '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const lineQty = (l) => l.colors.reduce((a, c) => a + c.q.reduce((x, y) => x + y, 0), 0);
 
-function docPO() {
+/* One renderer, one record per example. The vendor is the account this mockup runs as. */
+const PO_VENDOR = { name: 'Bella Boutique LLC', dba: 'dba Bella Boutique', addr: '1407 Broadway, Suite 902<br>New York, NY 10018',
+  contact: '(212) 555-0148 · orders@bellaboutique.com' };
+const PO_DOCS = {
+  po: { no: 'PO-BELL-004182', date: () => clock().today, linesheet: 'Resort 2027 — Core',
+    delivery: () => PO_PREORDER ? `Pre-order · est. ship ${PO_PREORDER}` : '',
+    buyer: { name: 'Marcy Lane Boutique', attn: 'Attn: Marcy Ruiz', contact: '(310) 555-0102 · marcy@marcylane.com',
+      bill: '88 Spring Street<br>Los Angeles, CA 90013', ship: '2210 Harbor Blvd, Dock 4<br>Long Beach, CA 90802' },
+    lines: PO_LINES, discount: { label: 'Discount — opening order 5%', rate: 0.05 }, pay: 'Visa ····7781',
+    note: 'Hold full order — do not split ship. Deliver to Dock 4 before 3pm.', issued: () => clock().today },
+  /* Many sizes: one style in 30 sizes (Size 23–52, the most values one option can hold), the larger sizes priced higher, sold
+     both open and in a 30-size pack. Shows how a long run lays out on paper. */
+  poMany: { no: 'ORD-20261020-004', date: () => 'Oct 20, 2026', linesheet: 'Denim Core 2027',
+    delivery: () => 'Pre-order · est. ship Apr 20, 2027',
+    buyer: { name: 'Global Trade Co.', attn: 'Attn: Sarah', contact: '+1 (123) 456 - 7890 · sarah@globaltrade.com',
+      bill: '2450 East 57th Street, Suite 1200<br>Los Angeles, CA 90058',
+      ship: 'Metro Supplies Distribution Center<br>2450 East 57th Street, Suite 1200<br>Los Angeles, CA 90058' },
+    lines: PO_LINES_MANY, discount: { label: 'Discount', rate: 0 }, pay: 'Credit card ····8765',
+    note: '', issued: () => 'Oct 20, 2026' },
+  /* The Phase 3 order ORD-20261012-001: same lines, prices and totals as its cart, checkout,
+     order screens and order emails ($951.80 · 48 pcs). */
+  poVariant: { no: 'ORD-20261012-001', date: () => 'Oct 12, 2026', linesheet: 'Summer Collection 2026',
+    delivery: () => 'Pre-order · est. ship Apr 20 – May 15, 2027',
+    buyer: { name: 'Global Trade Co.', attn: 'Attn: Sarah', contact: '+1 (123) 456 - 7890 · sarah@globaltrade.com',
+      bill: '2450 East 57th Street, Suite 1200<br>Los Angeles, CA 90058',
+      ship: 'Metro Supplies Distribution Center<br>2450 East 57th Street, Suite 1200<br>Los Angeles, CA 90058' },
+    lines: PO_LINES_VARIANT, discount: { label: 'Discount', rate: 0 }, pay: 'Credit card ····8765',
+    note: '', issued: () => 'Oct 12, 2026' },
+};
+/* The same order as poVariant, downloaded while the vendor is on the Free plan: every buyer field
+   reads Locked, as the Order List's Buyer column does (§3.2.1). The note is buyer-written and lives
+   only on the order detail, which a Free-plan vendor cannot open, so it is locked too. */
+PO_DOCS.poLocked = Object.assign({}, PO_DOCS.poVariant, { locked: true, note: 'Please deliver to the back dock before noon.' });
+/* The same order again with line discounts set in the vendor's order table: Heathered Olive open 10%,
+   Tan open $2.00 off each piece, the Burgundy Velvet pack 5%. Discount shows the money off one unit. */
+/* The PO the buyer gets the moment the order is placed: the order exactly as placed, before the
+   vendor confirms or changes anything, so its status at issue is NEW and it carries no line discount. */
+PO_DOCS.poNew = Object.assign({}, PO_DOCS.poVariant, { status: 'NEW' });
+const PO_DISC = { 'Heathered Olive|open': { v: 10, u: '%' }, 'Tan|open': { v: 2, u: '$' }, 'Burgundy Velvet|pack': { v: 5, u: '%' } };
+PO_DOCS.poDisc = Object.assign({}, PO_DOCS.poVariant, {
+  lines: PO_LINES_VARIANT.map(l => Object.assign({}, l, { colors: l.colors.map(c => Object.assign({}, c, { disc: PO_DISC[c.c + '|' + (l.open ? 'open' : 'pack')] })) })) });
+const poLock = () => `<span class="po-lock">${ICO.lock}Locked</span>`;
+/* Line discount = the vendor order table's Discount: a % of the price, or $ taken off every piece,
+   at most the line's cheapest variant. Unit price stays the price before it; Amount is after it. */
+const poDiscLabel = (off, per) => off > 0.004 ? `-${money(off)}<span class="po-per">/${per}</span>` : '—';   // money off one unit, in the Unit price's unit
+const poRows = (lines) => lines.flatMap(l => l.colors.flatMap(c => {
+  const pr = (i) => (c.price && c.price[i] != null) ? c.price[i] : l.unit;
+  const d = c.disc;
+  if (l.open) return l.sizes.map((z, i) => { if (!c.q[i]) return null;
+    const off = !d ? 0 : Math.round((d.u === '%' ? pr(i) * d.v / 100 : Math.min(d.v, pr(i))) * 100) / 100;   // to the cent, so the row adds up as printed
+    return { l, c, size: z, pack: 'Open', packs: '—', u: c.q[i], unit: pr(i), per: 'pc', disc: poDiscLabel(off, 'pc'), amt: c.q[i] * (pr(i) - off) }; }).filter(Boolean);
+  const ratio = l.pack.split('-').map(Number);
+  const packPrice = ratio.reduce((a, r, i) => a + r * pr(i), 0);
+  const perPack = ratio.reduce((a, b) => a + b, 0);
+  /* Every pack reads the same way, whether it holds 3 sizes or 30: one cell says what one pack
+     holds, and under the row a SIZE line with the PACK count under each size (S M L over 2 2 2),
+     then PRICE / PC naming each price once over the sizes it covers. A long run wraps the SIZE /
+     PACK pair into more bands; how many sizes fit a band depends on the longest size name. */
+  /* Each value can have its own price, so the price sits in the grid, one per value: a value line,
+     its PACK count, its PRICE / PC. A cell is as wide as its longest name or price needs; a long run
+     wraps into more bands, balanced so the last band is not a stub. */
+  const cells = l.sizes.map((z, i) => ({ z, n: ratio[i], p: money(pr(i)) }));
+  const maxCh = Math.max(...cells.map(x => Math.max(x.z.length, x.p.length)));
+  const fit = Math.max(1, Math.min(15, Math.floor(626 / (maxCh * 5.6 + 10))));
+  const nb = Math.ceil(cells.length / fit), BAND = Math.ceil(cells.length / nb), bands = [];
+  for (let k = 0; k < cells.length; k += BAND) bands.push(cells.slice(k, k + BAND));
+  const packOff = !d ? 0 : Math.round((d.u === '%' ? packPrice * d.v / 100 : perPack * Math.min(d.v, Math.min(...l.sizes.map((_, i) => pr(i))))) * 100) / 100;
+  return [{ l, c, nSizes: l.sizes.length, perPack, packs: c.packs, u: c.packs * perPack, unit: packPrice, per: 'pack', disc: poDiscLabel(packOff, 'pack'), amt: c.packs * (packPrice - packOff), BAND: fit, bands }];
+}));
+function docPO(rec = PO_DOCS.po) {
   // Every figure is computed. Three prices for one line was a real bug once.
-  const rows = PO_LINES.flatMap(l => l.colors.flatMap(c => l.open
-    ? l.sizes.map((z, i) => c.q[i] ? { l, c, opt2: z, pack: 'Open', packs: '—', u: c.q[i], amt: c.q[i] * l.unit } : null).filter(Boolean)
-    : [{ l, c, opt2: l.sizes.join('-'), pack: l.pack, packs: c.packs, u: c.q.reduce((x, y) => x + y, 0),
-         amt: c.q.reduce((x, y) => x + y, 0) * l.unit }]));
+  const rows = poRows(rec.lines);
   const sub = rows.reduce((a, r) => a + r.amt, 0);
-  return h`
-  <div class="sheet"><div class="po-paper">
+  const disc = sub * rec.discount.rate;
+  /* Paging by estimated height (a row = 1; a pack row adds its size lines). Page 1 also holds the
+     header and parties; the totals, payment, note and terms close the last page and need room. */
+  const weight = (r) => r.bands ? 1.2 + 1.35 * r.bands.length : (r.l.item.length > 30 ? 1.25 : 1);
+  const CAP1 = 8.6, CAPN = 15.5, TRAILER = 6.5;
+  const pages = [[]]; let room = CAP1;
+  rows.forEach((r, i) => { const w = weight(r); if (w > room && pages[pages.length - 1].length) { pages.push([]); room = CAPN; } pages[pages.length - 1].push(i); room -= w; });
+  if (room < TRAILER) pages.push([]);   // the closing block moves to a page of its own only when it does not fit
+  const N = pages.length;
+  const head = h`<thead><tr>
+        <th style="width:20px">#</th><th>Item</th><th style="width:72px">Option 1</th>
+        <th style="width:62px">Option 2</th><th style="width:50px">Pack</th>
+        <th class="n" style="width:42px">Packs</th><th class="n" style="width:56px">Total qty</th>
+        <th class="n" style="width:80px">Unit price</th><th class="n" style="width:58px">Discount</th><th class="n" style="width:74px">Amount</th>
+      </tr></thead>`;
+  const tr = (r, i) => h`
+        <tr class="${r.bands ? 'has-sizes' : ''}">
+          <td>${i + 1}</td>
+          <td><div class="po-opt">${r.l.item}</div><div class="po-style">Style No. ${r.l.style}</div></td>
+          <td>${r.c.c}</td>
+          ${r.per === 'pack' ? h`<td colspan="2" class="po-runsum">${r.perPack} pcs per pack<div class="po-style">${r.nSizes} sizes · size &amp; pack below</div></td>` : h`
+          <td class="po-run">${r.size}</td>
+          <td class="po-run">${r.pack}</td>`}
+          <td class="n">${r.packs}</td>
+          <td class="n">${r.u}</td>
+          <td class="n">${money(r.unit)}<span class="po-per">/${r.per}</span></td>
+          <td class="n">${r.disc}</td>
+          <td class="n">${money(r.amt)}</td>
+        </tr>${r.bands ? h`
+        <tr class="po-sizes"><td></td><td colspan="9">${r.bands.map(b => { const cw = Math.floor(618 / r.BAND); return h`<table class="po-grid">
+          <tr class="z"><th>${r.l.packBy || 'Size'}</th>${b.map(x => h`<td><div style="width:${cw - 1}px">${x.z}</div></td>`).join('')}</tr>
+          <tr class="q"><th>Pack</th>${b.map(x => h`<td>${x.n}</td>`).join('')}</tr>
+          <tr class="p"><th>Price / pc</th>${b.map(x => h`<td>${x.p}</td>`).join('')}</tr></table>`; }).join('')}</td></tr>` : ''}`;
+  const table = (idx, cont) => idx.length ? h`<table class="po-tbl${cont ? ' cont' : ''}">${head}<tbody>${idx.map(i => tr(rows[i], i)).join('')}</tbody></table>` : '';
+  const sums = h`
+    <div class="po-sums"><div class="po-sums-in">
+      <div class="po-sum"><span>Subtotal</span><span>${money(sub)}</span></div>
+      <div class="po-sum"><span>${rec.discount.label}</span><span>-${money(disc)}</span></div>
+      <div class="po-sum tot"><span>Total (Merchandise)</span><span>${money(sub - disc)}</span></div>
+    </div></div>
+    <div class="po-ship">Shipping &amp; handling is calculated and charged per shipment.</div>`;
+  const first = h`
     <div class="po-head">
       <div>
         <div class="po-brandmark">shop<span>c</span>ord</div>
         <div class="po-title">PURCHASE ORDER</div>
       </div>
       <div class="po-facts">
-        <!-- §15 ① — the PO number IS the existing Order ID, PO-{VENDOR4}-{번호}, not a new
-             series. One order, one identifier. -->
-        <div class="po-fact"><span class="k">PO Number</span><span class="v">PO-BELL-004182</span></div>
-        <div class="po-fact"><span class="k">Order Date</span><span class="v">${clock().today}</span></div>
-        <!-- "at issue" is the spec's own parenthetical, 발행 시점: a PDF is a snapshot
-             while a status keeps moving, so a bare "Order Status" reads as live. -->
-        <div class="po-fact"><span class="k">Order Status at issue</span><span class="v"><span class="po-pill">CONFIRMED</span></span></div>
-        <div class="po-fact"><span class="k">Linesheet</span><span class="v">Resort 2027 — Core</span></div>
-        ${PO_PREORDER ? h`<div class="po-fact"><span class="k">Delivery</span><span class="v">Pre-order · est. ship ${PO_PREORDER}</span></div>` : ''}
+        <div class="po-fact"><span class="k">PO Number</span><span class="v">${rec.no}</span></div>
+        <div class="po-fact"><span class="k">Order Date</span><span class="v">${rec.date()}</span></div>
+        <div class="po-fact"><span class="k">Order Status at issue</span><span class="v"><span class="po-pill">${rec.status || 'CONFIRMED'}</span></span></div>
+        <div class="po-fact"><span class="k">Linesheet</span><span class="v">${rec.linesheet}</span></div>
       </div>
     </div>
     <div class="po-rule"></div>
-
     <div class="po-parties">
       <div class="po-party">
         <div class="po-k">Vendor</div>
-        <div class="po-name">Bella Boutique LLC</div>
-        <div class="po-line">dba Bella Boutique</div>
-        <div class="po-line">1407 Broadway, Suite 902<br>New York, NY 10018</div>
-        <div class="po-line">(212) 555-0148 · orders@bellaboutique.com</div>
+        <div class="po-name">${PO_VENDOR.name}</div>
+        <div class="po-line">${PO_VENDOR.dba}</div>
+        <div class="po-line">${PO_VENDOR.addr}</div>
+        <div class="po-line">${PO_VENDOR.contact}</div>
       </div>
       <div class="po-party">
         <div class="po-k">Buyer</div>
-        <div class="po-name">Marcy Lane Boutique</div>
-        <div class="po-line">Attn: Marcy Ruiz</div>
-        <div class="po-line">(310) 555-0102 · marcy@marcylane.com</div>
-        <div class="po-sub">
-          <div class="po-k">Bill to</div>
-          <div class="po-line">88 Spring Street<br>Los Angeles, CA 90013</div>
-        </div>
-        <!-- Ship to is separate because the spec calls it out as able to differ from
-             Bill to. Whether the PDF also carries this address's revision history is
-             undecided; a PDF is a snapshot, so it shows the address as of issue. -->
-        <div class="po-sub">
-          <div class="po-k">Ship to</div>
-          <div class="po-line">2210 Harbor Blvd, Dock 4<br>Long Beach, CA 90802</div>
-        </div>
+        ${rec.locked ? h`<div class="po-line">${poLock()}</div>` : h`<div class="po-name">${rec.buyer.name}</div>
+        <div class="po-line">${rec.buyer.attn}</div>
+        <div class="po-line">${rec.buyer.contact}</div>`}
+        <div class="po-sub"><div class="po-k">Bill to</div><div class="po-line">${rec.locked ? poLock() : rec.buyer.bill}</div></div>
+        <div class="po-sub"><div class="po-k">Ship to</div><div class="po-line">${rec.locked ? poLock() : rec.buyer.ship}</div></div>
       </div>
-    </div>
-
-    <table class="po-tbl">
-      <thead><tr>
-        <!-- v2.1 §15 ③ names them Color and Size, so the generic Option 1 / Option 2 from
-             8/28 goes back. The size run keeps its own Pack column beside it rather than
-             being folded into Size the way the spec writes it — one column per fact. -->
-        <th style="width:20px">#</th><th>Item</th><th style="width:74px">Color</th>
-        <th style="width:84px">Size</th>
-        <!-- The pack ratio is its own fact, not part of the size list (Grace, 8/28).
-             Spec ③ wants the arithmetic visible — pack ratio, how many packs, and the
-             units they come to — so each gets a column and none of them is a compound. -->
-        <th style="width:66px">Pack</th>
-        <th class="n" style="width:50px">Packs</th><th class="n" style="width:62px">Total qty</th>
-        <th class="n" style="width:72px">Unit price</th><th class="n" style="width:82px">Amount</th>
-      </tr></thead>
-      <tbody>${rows.map((r, i) => h`
-        <tr>
-          <td>${i + 1}</td>
-          <td><div class="po-opt">${r.l.item}</div><div class="po-style">Style No. ${r.l.style}</div></td>
-          <td>${r.c.c}</td>
-          <td class="po-run">${r.opt2}</td>
-          <td class="po-run">${r.pack}</td>
-          <td class="n">${r.packs}</td>
-          <td class="n">${r.u}</td>
-          <td class="n">${money(r.l.unit)}</td>
-          <td class="n">${money(r.amt)}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
-
-    <div class="po-sums"><div class="po-sums-in">
-      <!-- §15 ④ — Subtotal · Discount · Total (Merchandise). The total is NAMED because on
-           a document that deliberately excludes shipping, a bare "Total" reads as the
-           amount owed. -->
-      <div class="po-sum"><span>Subtotal</span><span>${money(sub)}</span></div>
-      <div class="po-sum"><span>Discount — opening order 5%</span><span>-${money(sub * 0.05)}</span></div>
-      <div class="po-sum tot"><span>Total (Merchandise)</span><span>${money(sub * 0.95)}</span></div>
-    </div></div>
-    <div class="po-ship">Shipping &amp; handling is calculated and charged per shipment.</div>
-
-      <div class="po-foot">
-        <span>Purchase order PO-BELL-004182</span>
-        <span>Page 1 of 2</span>
-      </div>
-    </div></div>
-
-  <!-- Page 2. The bottom matter was being crushed into the first page — padding cut to
-       5px, section gaps halved — to make one sheet fit, which is trading legibility for a
-       number nobody measures. A wholesale PO with this many lines IS two pages; the
-       continuation line means a detached second sheet still says which order it belongs
-       to, which is the whole reason printed documents carry one. -->
-  <div class="sheet"><div class="po-paper">
-    <div class="po-cont">
-      <span>Purchase order <b>PO-BELL-004182</b></span>
-      <span><b>Bella Boutique LLC</b> → Marcy Lane Boutique</span>
-    </div>
-
+    </div>`;
+  const trailer = h`${sums}
     <div class="po-meta">
-      <!-- §15 ⑤ — "Payment Method만". The buyer's own reference came from FG's PO and is
-           not in this spec, so it leaves with the shipping field. -->
-      <div><div class="po-k">Payment method</div><div class="po-meta-v">Visa ····7781</div></div>
+      <div><div class="po-k">Payment method</div><div class="po-meta-v">${rec.pay}</div></div>
     </div>
-
     <div class="po-note">
-      <!-- "Note", not "Special instructions" (Grace, 8/28). The 8/28 spec ⑥ offers both
-           as "Special Instructions/Note"; Shopcord orders carry a note. -->
       <div class="po-k">Note</div>
-      <div class="po-note-v">Hold full order — do not split ship. Deliver to Dock 4 before 3pm.</div>
+      <div class="po-note-v">${rec.locked ? poLock() : (rec.note || '—')}</div>
     </div>
-
-    <!-- FG carries a full Return Policy and Cancellation Policy here. Ours cannot be
-         written yet: the spec makes this block conditional on legal, and inventing terms
-         on a document a buyer keeps would be worse than an obvious gap. -->
     <div class="po-legal">
       <div class="po-k">Terms</div>
       <div class="po-legal-v">Return and cancellation terms — pending legal review.</div>
-    </div>
-
+    </div>`;
+  return pages.map((idx, p) => {
+    const last = p === N - 1;
+    return h`
+  <div class="sheet"><div class="po-paper">
+    ${p === 0 ? first : h`<div class="po-cont">
+      <span>Purchase order <b>${rec.no}</b></span>
+      <span><b>${PO_VENDOR.name}</b> → ${rec.locked ? poLock() : rec.buyer.name}</span>
+    </div>`}
+    ${table(idx, p > 0)}
+    ${last ? trailer : ''}
     <div class="po-foot">
-      <span>Issued ${clock().today} · 4:12 PM ET · Generated by Shopcord</span>
-      <span>Page 2 of 2</span>
+      <span>${last ? `Issued ${rec.issued()} · 4:12 PM ET · Generated by Shopcord` : `Purchase order ${rec.no}`}</span>
+      <span>Page ${p + 1} of ${N}</span>
     </div>
   </div></div>`;
+  }).join('');
 }
 
 /* ── Settlement statement ──────────────────────────────────────────────────
@@ -5663,6 +5756,15 @@ function periodFrom(dateStr) {
 
 function rcptPaper(row) {
   const isSub = row.type === 'Subscription';
+  /* Credit purchase (11/17, finance via Jennie): the same paper, three differences. The row
+     says what the money bought (pack credits + bonus, from PACKS), the middle column is the
+     credits added instead of a service period, and there is NO tax line, because only the
+     subscription is taxed (Grace, 9/14). Base credits = 1 per cent; the rest is the bonus. */
+  const pk = isSub ? null : row.credits ? { c: row.credits, p: row.amt, bonus: row.bonus }
+                           : PACKS.credits.find(x => x.p === row.amt);
+  const base = pk ? Math.round(parseFloat(String(pk.p).replace(/[$,]/g, '')) * 100) : 0;
+  const bonusN = pk ? pk.c - base : 0;
+  const fmtN = n => Number(n).toLocaleString('en-US');
   return h`
   <div class="rcpt">
     <div class="rcpt-top">
@@ -5672,7 +5774,7 @@ function rcptPaper(row) {
       </div>
       <div class="rcpt-doc">
         <div class="rcpt-doc-k">RECEIPT</div>
-        <div class="rcpt-org">No. <b>SC-R-2026-04182</b><br>Issued ${row.date}</div>
+        <div class="rcpt-org">No. <b>${isSub ? 'SC-R-2026-04182' : 'SC-R-2027-00918'}</b><br>Issued ${row.date}</div>
         <div class="rcpt-paid">PAID</div>
       </div>
     </div>
@@ -5704,12 +5806,14 @@ function rcptPaper(row) {
     </div>
 
     <table class="rcpt-tbl">
-      <thead><tr><th>Description</th><th style="width:200px">Service period</th><th class="n" style="width:90px">Amount</th></tr></thead>
+      <thead><tr><th>Description</th><th style="width:200px"${isSub ? '' : ' class="n"'}>${isSub ? 'Service period' : 'Credits added'}</th><th class="n" style="width:90px">Amount</th></tr></thead>
       <tbody>
         <tr>
-          <td>${isSub ? 'Shopcord subscription' : row.type}<br>
-            <span class="muted" style="font-size:11.5px">${isSub ? 'Monthly plan' : 'Credit pack'}</span></td>
-          <td>${isSub ? periodFrom(row.date) : '<span class="muted">Not time-based</span>'}</td>
+          <td>${isSub ? 'Shopcord subscription' : 'SMS credits'}<br>
+            <span class="muted" style="font-size:11.5px">${isSub ? 'Monthly plan'
+              : pk ? (bonusN > 0 ? `${row.amt} pack · ${fmtN(base)} credits + ${fmtN(bonusN)} bonus (${pk.bonus})` : `${row.amt} pack · ${fmtN(base)} credits`)
+              : 'Credit pack'}</span></td>
+          <td${isSub ? '' : ' class="n"'}>${isSub ? periodFrom(row.date) : pk ? fmtN(pk.c) : '—'}</td>
           <td class="n">${row.amt}</td>
         </tr>
       </tbody>
@@ -5721,8 +5825,8 @@ function rcptPaper(row) {
            what the tax was. Unlike every forward-looking price, the rate is known here
            because the charge already happened. -->
       <div class="rcpt-sum"><span>Subtotal</span><span>${row.amt}</span></div>
-      <div class="rcpt-sum"><span>Sales tax — ${TAX.place} (${TAX.rate})</span><span>${TAX.amt}</span></div>
-      <div class="rcpt-sum tot"><span>Total paid</span><span>${TAX.total}</span></div>
+      ${isSub ? h`<div class="rcpt-sum"><span>Sales tax — ${TAX.place} (${TAX.rate})</span><span>${TAX.amt}</span></div>` : ''}
+      <div class="rcpt-sum tot"><span>Total paid</span><span>${isSub ? TAX.total : row.amt}</span></div>
     </div></div>
 
     <!-- No footer (Grace, 9/2): neither line is something the PRD says the receipt must
@@ -5924,9 +6028,24 @@ function docReceipt() {
 }
 
 const DOCS = {
-  po:      { label: 'Purchase order', hint: '§5.1 internal PDF — scope undecided',
-             spec: '§5.1', to: 'Vendor + buyer', chip: 'Generated PDF', off: 'Not a Balance document',
-             print: true, render: docPO },
+  po:      { label: 'Purchase order — one price per item', hint: '§15 · every size of an item at the same price', updated: '11/10',
+             spec: '§15', to: 'Vendor + buyer', chip: 'Generated PDF', off: 'Not a Balance document',
+             print: true, render: () => docPO(PO_DOCS.po) },
+  poVariant: { label: 'Purchase order — prices by variant', hint: '§15 · Phase 3 order ORD-20261012-001 · $951.80 · 48 pcs', updated: '11/10',
+             spec: '§15', to: 'Vendor + buyer', chip: 'Generated PDF', off: 'Not a Balance document',
+             print: true, render: () => docPO(PO_DOCS.poVariant) },
+  poMany:  { label: 'Purchase order — 30 sizes, open + pre pack', hint: '§15 · a long size run on paper · pages grow with the lines', updated: '11/10',
+             spec: '§15', to: 'Vendor + buyer', chip: 'Generated PDF', off: 'Not a Balance document',
+             print: true, render: () => docPO(PO_DOCS.poMany) },
+  poNew:   { label: 'Purchase order — newly placed order', hint: '§15 · sent with the New order placed email · status at issue NEW', updated: '11/17',
+             spec: '§15', to: 'Buyer + vendor', chip: 'Generated PDF', off: 'Not a Balance document',
+             print: true, render: () => docPO(PO_DOCS.poNew) },
+  poDisc:  { label: 'Purchase order — with line discounts', hint: '§15 · the variant order with a 10%, a $2.00 /pc and a 5% line discount', updated: '11/17',
+             spec: '§15', to: 'Vendor + buyer', chip: 'Generated PDF', off: 'Not a Balance document',
+             print: true, render: () => docPO(PO_DOCS.poDisc) },
+  poLocked: { label: 'Purchase order — vendor not subscribed', hint: '§3.2.1 · the same order with every buyer field Locked, as on the Order List', updated: '11/12',
+             spec: '§15 · §3.2.1', to: 'Vendor (Free plan)', chip: 'Generated PDF', off: 'Not a Balance document',
+             print: true, render: () => docPO(PO_DOCS.poLocked) },
   settlement: { label: 'Settlement statement', hint: 'What each cutover removes from it',
              spec: '§12 · PB 9.5.0', to: 'Vendor', chip: 'Settlement document', off: 'We change its contents, not its design',
              print: true, render: docSettlementPanel },
@@ -5936,6 +6055,9 @@ const DOCS = {
   receipt: { label: 'Payment receipt', hint: 'PB 6.1.0 · 우리 PDF (v2.5 §6.1)',
              spec: '§6.1 · PB 6.1.0', to: 'Vendor', chip: 'Our PDF', off: 'Balance receipt PDF is switched off',
              print: false, render: docReceipt },
+  receiptCredit: { label: 'Payment receipt — SMS credits', hint: 'PB 6.1.0 · the same receipt for a credit purchase · no tax line', updated: '11/17',
+             spec: '§6.1 · PB 6.1.0 · 2차 §3', to: 'Vendor', chip: 'Our PDF', off: 'Balance receipt PDF is switched off',
+             print: false, render: () => h`<div class="sheet">${rcptPaper({ date: 'Jan 28, 2027', amt: '$100.00', type: 'SMS pack', credits: 10500, bonus: '+5%' })}</div>` },
   invoiceVendor: { label: 'Recovery invoice — vendor', hint: '§6.3.4 양식 · PB 6.2.0 외부 인보이스 모드',
              spec: '§6.1 · §6.3.4 · PB 6.2.0', to: 'Vendor', chip: 'Our PDF', off: 'Balance supplies the payment page only',
              print: true, render: () => h`<div class="sheet">${invoicePaper('vendor')}</div>` },
@@ -5948,7 +6070,7 @@ function docPreview() {
   const d = DOCS[S.docKey];
   if (!d) return '<div class="modal"><div class="modal-body">No document.</div></div>';
   return h`
-  <div class="doc-modal">
+  <div class="doc-modal" data-doc="${S.docKey}">
     <div class="doc-head">
       <div class="doc-name">${d.label}</div>
       <div class="doc-actions">
@@ -5966,7 +6088,7 @@ const PROTO_GROUPS = [
   { label: 'SMS credits &amp; sending', keys: ['credits', 'exhausted'], r2: true },
   { label: 'My Account · Payout', keys: ['payout'] },
   { label: 'Campaign send flow', keys: ['campaignOk', 'campaignShort', 'campaignLocked'], r2: true },
-  { label: 'Orders · PO download', keys: ['ordersList', 'orderDetail', 'orderDetailNew'] },
+  { label: 'Orders · PO download', keys: ['ordersList', 'ordersListFree', 'orderDetail', 'orderDetailNew'] },
 ];
 
 function renderProto() {
@@ -6023,7 +6145,7 @@ function renderProto() {
       <div class="proto-group-label">Document — PDF</div>
       ${Object.keys(DOCS).map(k => h`
         <button class="proto-btn ${S.modal === 'doc' && S.docKey === k ? 'is-active' : ''}" data-act="doc" data-val="${k}">
-          ${DOCS[k].label}<span class="hint">${DOCS[k].hint}</span>
+          ${DOCS[k].label}${DOCS[k].updated ? `<span class="proto-upd">Updated ${DOCS[k].updated}</span>` : ''}<span class="hint">${DOCS[k].hint}</span>
         </button>`).join('')}
     </div>
     <div class="proto-group">
@@ -6105,7 +6227,9 @@ const ORD_BUYER_0314 = { email: 'sarah@globaltrade.com', phone: '+1 (123) 456 - 
   ship: ['Metro Supplies Distribution Center', '2450 East 57th Street,', 'Suite 1200', 'Los Angeles, CA 90058'] };
 const ordFind  = (no) => ORDERS.find(o => o.no === no) || ORDERS[0];
 const ordCur   = () => ordFind(S.ordNo || sc().ord);
-const ordHasPO = (o) => o.status !== 'New';   // §15 — the PO is generated when the order is confirmed
+const ordHasPO = (o) => o.status !== 'New';
+/* §3.2.1 — without a paid subscription the list shows the order but not who placed it, and the detail is locked. */
+const ordLocked = () => !['active', 'past_due'].includes(sc().sub);   // §15 — the PO is generated when the order is confirmed
 const ordEffSel = () => S.ordAll ? ORDERS.map(o => o.no) : (S.ordSel || []);
 const ordMoney = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 /* Orders without their own line list render one line for the whole order, so the item table,
@@ -6178,7 +6302,7 @@ function screenOrders() {
         <td class="ord-cb"><button class="ord-cb-btn" data-act="ordToggle" data-val="${o.no}" aria-label="Select ${o.no}"><span class="chk${on ? ' is-on' : ''}">${OI.tick}</span></button></td>
         <td>${o.date}</td>
         <td><button class="ord-no" data-act="ordOpen" data-val="${o.no}">${o.no}</button></td>
-        <td><span class="ord-clip">${o.buyer}</span></td>
+        <td>${ordLocked() ? `<span class="ord-lock">${ICO.lock}Locked</span>` : `<span class="ord-clip">${o.buyer}</span>`}</td>
         <td><span class="ord-clip">${o.ls}</span></td>
         <td>${o.total}</td>
         <td>${o.ship}</td>
@@ -6423,7 +6547,7 @@ document.addEventListener('click', (e) => {
     case 'ordSelMatching': S.ordAll = true; render(); break;
     case 'ordClear':       S.ordSel = []; S.ordAll = false; render(); break;
     case 'ordPage':        S.ordPage = Number(actEl.dataset.val); S.ordSel = []; S.ordAll = false; render(); break;   // a selection belongs to its page
-    case 'ordDownloadPOs': {
+    case 'ordDownloadPOs': {   // on the Free plan too: the POs come down with the buyer Locked (§3.2.1)
       const picked = ordEffSel();
       const n = picked.filter(no => ordHasPO(ordFind(no))).length;
       const skip = picked.length - n;
@@ -6433,6 +6557,7 @@ document.addEventListener('click', (e) => {
       render(); break;
     }
     case 'ordOpen': {
+      if (ordLocked()) { openModal('subscribePrompt'); break; }   // the locked-order trigger (§14.1)
       const o = ordFind(actEl.dataset.val);
       setScenario(ordHasPO(o) ? 'orderDetail' : 'orderDetailNew');
       S.ordNo = o.no; render(); break;
@@ -7227,81 +7352,106 @@ const ANNOS = [
     ],
     refs: '§3.2 · PB 2.12.0 · PB 6.1.0 · PB 2.3.0' },
 
-  { id: 'PO1', sel: '.doc-modal', title: 'Purchase order — the document', tags: 'DEV / PM', group: true,
+  { id: 'PO1', sel: '.doc-modal[data-doc^="po"]', title: 'Purchase order — the document', tags: 'DEV / PM', group: true,
     bullets: [
-      '<b>One document, two audiences.</b> §15 gives the vendor (order handling) and the buyer (purchase record) the <b>same PDF</b> — not two renderings. Generated when the buyer confirms an order.',
-      '<b>Order unit, merchandise only.</b> It is complete at the moment it is issued, so it carries <b>no shipping cost and no payment progress</b> — shipping is fixed per shipment and billed there, and each capture gets its own Balance receipt.',
-      'Screen <b>and</b> PDF download/print, from the same markup.',
-      '<b>Ships with the 1st release</b> (§15) — this is not a later phase.',
+      'One document for both sides: the vendor and the buyer get the same PDF (§15).',
+      'Generated when the order is confirmed and complete at that moment: order unit, merchandise only, no shipping cost and no payment progress (§15).',
+      'Ships with the 1st release (§15); this is not a later phase.',
+      'Every price on it is what the buyer pays for that variant. An item sold at one price shows the same price on every row and under every size; an item priced per variant shows each variant’s own price (③).',
     ],
     edge: [
-      'The PO Number reuses the existing Order ID format <code>PO-{VENDOR4}-{번호}</code> — it is not a new sequence.',
-      'This is a <b>platform-internal PDF</b>, not a Balance document. Everything else in this build\'s Document panel comes from Balance; this one we render.',
+      'Five examples in this panel: one price per item, prices by variant, the same order with line discounts, 30 sizes with open and pre pack mixed, and the variant order downloaded by a vendor not subscribed. Same layout for all.',
+      'A platform-internal PDF, not a Balance document.',
+      'While the vendor is not subscribed, POs still download from the Order List, but every buyer field on them reads Locked, the same as the Buyer column there (§3.2.1).',
     ],
-    refs: '§6.2 · §15' },
+    refs: '§15 · §3.2.1' },
 
-  { id: 'PO2', sel: '.po-head', title: '① Header', tags: 'DEV',
+  { id: 'PO2', sel: '.po-head', title: '① Header', tags: 'DEV / PM',
     bullets: [
-      'Logo · <code>PURCHASE ORDER</code> · PO Number · order date · <b>order status at issue</b> · linesheet name (§15.1 ①).',
-      '<b>"at issue" is the point.</b> The status is frozen into the document, so a PO printed today keeps saying what was true today even after the order moves on.',
+      'Logo · PURCHASE ORDER · PO Number · order date · order status at issue · linesheet name (§15.1 ①).',
+      'The status is the one at issue: the document is complete when it is issued and does not follow the order afterwards (§15).',
+      'No delivery date on the PO. At confirmation an order may have none yet, and an order shipped in several shipments has several, so a single order-level date says little.',
     ],
-    edge: ['<code>PURCHASE ORDER</code> and <code>Generated by Shopcord</code> are the two strings §15.1 fixes verbatim — do not reword either.'],
-    refs: '§15.1 ①' },
+    edge: [
+      '🔴 The PO is generated when the order is confirmed (§15), so the status at issue is always the confirmed state. The order screens call that state In Progress and the PO prints CONFIRMED; which name the PO uses is not decided.',
+      '🔴 The PO Number is the existing order ID (§15.1 ①). §15.1 ① writes it as PO-{VENDOR4}-{번호}, while the order screens show ORD-…; the real format has to be confirmed.',
+      '<code>PURCHASE ORDER</code> and <code>Generated by Shopcord</code> are fixed verbatim by §15.1. Do not reword either.',
+    ],
+    refs: '§15 · §15.1 ①' },
 
-  { id: 'PO3', sel: '.po-parties', title: '② Parties — and why Ship to is separate', tags: 'DEV',
+  { id: 'PO3', sel: '.po-parties', title: '② Parties', tags: 'DEV / PM',
     bullets: [
-      'Vendor: DBA / legal name · address · contact. Buyer: name · attention · <b>Bill to</b> · contact.',
-      '<b>Ship to is its own field and can differ from Bill to</b> (§15.1 ②) — a buyer billing a head office and shipping to a dock is the normal case, not the exception.',
-      'Ship to must <b>reflect edits</b> — if the address changed after ordering, the PO shows the current one.',
+      'Vendor: DBA / legal name · address · contact. Buyer: name · attention · contact · Bill to · Ship to (§15.1 ②).',
+      '<code>Ship to</code> is its own field and can differ from <code>Bill to</code> (§15.1 ②).',
+      'While the vendor is not subscribed, the buyer’s name, attention, contact, Bill to and Ship to each read Locked with a lock icon, as the Order List’s Buyer column does; so does the buyer in the header of every following page. The vendor block stays (§3.2.1).',
     ],
-    edge: ['Address edit history is the order\'s, not the document\'s. The PO renders whatever the order holds when the PDF is generated, so two downloads of the same PO can differ.'],
-    refs: '§15.1 ②' },
+    edge: [
+      '🔴 §15 makes the PO complete at issue, while §15.1 ② asks Ship to to reflect later edits. Whether a later download regenerates the PO, and so can differ from the first, is not decided.',
+    ],
+    refs: '§15 · §15.1 ②' },
 
-  { id: 'PO4', sel: '.po-tbl', title: '③ Line items', tags: 'DEV',
+  { id: 'PO4', sel: '.po-tbl', title: '③ Line items — prices by variant', tags: 'DEV / PM',
     bullets: [
-      '# · Style No. · Item Name · Color · <b>Size (size-run pack notation)</b> · Pack / Total Qty · Unit Price · Amount (§15.1 ③).',
-      'The size run is written as the pack breakdown (<code>1-2-1</code> against <code>S-M-L</code>), so packs × run gives total qty — wholesale ordering is by pack, not by unit.',
+      'Columns: # · Item with Style No. · Option 1 · Option 2 · Pack · Packs · Total qty · Unit price · Discount · Amount, as the vendor’s order table names them (§15.1 ③). Option 1 and Option 2 carry the item’s own options, usually Color and Size.',
+      'Open Pack: one row per variant (Option 1 × Option 2). Option 2 is that variant’s value, Pack reads Open and Packs —. Unit price is that variant’s price per piece, <code>$18.00 /pc</code>; Amount = Total qty × (Unit price − Discount).',
+      'Pre Pack: one row per pack (one Option 1 value). Option 2 and Pack merge into one cell that says what one pack holds: <i>6 pcs per pack · 3 sizes · size &amp; pack below</i>. Unit price is the price of one pack, <code>$117.00 /pack</code>, which is each size’s price × its count, added up. Amount = Packs × (Unit price − Discount).',
+      'Each pack row has its own pack price, because each adds up its own sizes: <i>Heathered Olive $117.00</i> (S $18.00 · M $19.50 · L $21.00 × 2), <i>Burgundy Velvet $129.00</i> (all $21.50), <i>Rainbow Tie-Dye $117.00</i> (all $19.50). Packs of the same item can differ in price, by size and by color, and each row shows its own.',
+      'Under every pack row, a small table: the Pack by option on top, named as the item names it (SIZE here), then under each of its values the PACK count and the PRICE / PC. S M L over 2 2 2 over $18.00 $19.50 $21.00. Every value shows its own price, even when they are all the same, so the pack price can always be checked: Σ PACK × PRICE / PC = Unit price.',
+      'A pack of 30 values (the most one option holds) wraps the same table into more bands. A cell is as wide as its longest name or price; up to 15 values fit a band, and bands are balanced so none is a stub (30 sizes with prices like $24.00 = 10 + 10 + 10). A PDF cannot fold, so every value is always printed.',
+      'Discount is the money the line discount takes off one unit, in the same unit as Unit price: <code>-$1.80 /pc</code>, <code>-$6.45 /pack</code>, or — when the line has none. A % set in the vendor’s order table is printed as the amount it comes to; a $ discount comes off every piece, at most the line’s cheapest variant, so on a pack row it is that $ × pieces per pack. Amount = quantity × (Unit price − Discount).',
+      'Prices are only what the buyer pays for that variant. No WS, MSRP or strikethrough, the same as the order screens and the order emails.',
+      'Total qty is pieces; for a pack row, Packs × pieces per pack.',
+      'A long order runs onto as many pages as it needs: each page repeats the column heads, and the totals, payment, note and terms close the last page. Every page says Page n of N.',
     ],
-    edge: ['Style No. sits under the item name rather than in its own column; it belongs to the product, and a separate column made the table wider than the paper.'],
+    edge: [
+      '🔴 §15.1 ③ names one Unit Price per line. With prices per variant a pack row is priced per pack, not per piece, so §15.1 ③ has to say so.',
+      '§15.1 ③ lists Color and Size, not Option 1 and Option 2, and has no Discount column.',
+      'Style No. sits under the item name rather than in its own column: a separate column made the table wider than the paper.',
+    ],
     refs: '§15.1 ③' },
 
   { id: 'PO5', sel: '.po-sums', title: '④ Totals — and the required shipping notice', tags: 'DEV / PM',
     bullets: [
-      'Subtotal · Discount · <b><code>Total (Merchandise)</code></b> — the qualifier is §15.1 ④\'s own label, and it is load-bearing: this total is <b>not</b> what the buyer will pay in full.',
-      'The notice <b><code>Shipping &amp; handling is calculated and charged per shipment</code></b> is <b>required</b>, not optional. The document deliberately excludes shipping, so it has to say so.',
+      'Subtotal is the sum of the Amount column, so line discounts are already in it. Then the order-level Discount and <code>Total (Merchandise)</code> (§15.1 ④). The named total says it is not everything the buyer will pay.',
+      '<i>Shipping &amp; handling is calculated and charged per shipment</i> is required. The document leaves shipping out, so it has to say so.',
     ],
     edge: [
-      'One of only a handful of strings PRD v2.1 specifies word for word. Do not shorten it.',
-      'No tax line in the 1st release (8/27 리뷰 확정).',
+      'One of the few strings the PRD gives word for word. Do not shorten it.',
+      'No tax line.',
     ],
     refs: '§15.1 ④' },
 
   { id: 'PO6', sel: '.po-meta', title: '⑤ Payment information — one field only', tags: 'DEV',
     bullets: [
-      '<b>Payment Method and nothing else</b> (§15.1 ⑤) — card last 4, or <code>Other</code>.',
-      'No paid/unpaid status, no amount captured, no transaction id. Those move after the PO is issued, and this document does not track them.',
+      '<code>Payment Method</code> and nothing else, card last 4 or Other (§15.1 ⑤).',
+      'No paid status, captured amount or transaction id. Those move after the PO is issued, and this document does not track them.',
     ],
-    edge: ['A buyer reference field existed here from FG\'s PO; §15 does not list it, so it was removed with the shipping field.'],
     refs: '§15.1 ⑤' },
 
   { id: 'PO7', sel: '.po-note', title: '⑥ Footer — note, issue stamp, terms', tags: 'DEV / PM',
     bullets: [
-      'Order note · issue timestamp · <code>Generated by Shopcord</code> footer (§15.1 ⑥).',
-      'The issue timestamp is what makes the document citable — it says which moment the frozen fields above describe.',
+      'Order note · issue timestamp · <code>Generated by Shopcord</code> (§15.1 ⑥). An order without a note shows <i>—</i>.',
+      'The issue timestamp says which moment the document describes.',
     ],
     edge: [
-      '<b>🔴 Trade terms are unresolved.</b> §15.1 ⑥ makes them conditional — "(법무 확인 후) 거래 조건 고지" — and §15.2 ②&nbsp;keeps the wording with legal. The placeholder on screen is a slot, not copy: <b>do not ship it as written</b>.',
-      '"Note" rather than "Special instructions": the 8/28 spec offers both and Shopcord orders carry a note.',
+      '🔴 Trade terms are not written yet. §15.1 ⑥ makes them conditional on legal and §15.2 ② keeps the wording with legal. The text on screen is a placeholder; do not ship it as written.',
     ],
     refs: '§15.1 ⑥ · §15.2 ②' },
 
-  { id: 'PO8', sel: '.doc-actions', title: 'Entry points and download', tags: 'DEV',
+  { id: 'PO8', sel: '.doc-modal[data-doc^="po"] .doc-actions', title: 'Entry points and download', tags: 'DEV / PM',
     bullets: [
-      '<code>Download PO</code> from <b>the vendor\'s order detail</b> and <b>the buyer\'s order history</b> — the same document from both sides (§15.2 ①).',
-      'Attaching it to the order confirmation email is <b>optional</b> (§15.2 ①), so nothing here depends on it.',
+      '<code>Download PO</code> on the vendor’s order detail and on the buyer’s order history gives the same document (§15.2 ①).',
+      'Pressing it saves <code>{PO number}.pdf</code>. Nothing opens and the page stays where it is.',
+      'The Order List downloads several at once: selected rows, one ZIP with a PDF per order.',
+      'Attaching it to the order confirmation email is optional (§15.2 ①).',
     ],
-    edge: ['This panel is the mockup\'s way of showing a document that lives on the order screens — there is no PO entry point inside Subscription.'],
-    refs: '§15.2 ①' },
+    edge: [
+      'In this mockup the documents open in a viewer, and <code>Save as PDF</code> uses the browser’s print dialog.',
+      'While the vendor is not subscribed, the order detail is locked (§3.2.1 · §14.1), so the Order List is the only way to a PO, and <code>Download POs</code> there downloads them with every buyer field Locked.',
+      'The Order List is not one of §15.2 ①’s entry points.',
+      'There is no PO entry point inside Subscription.',
+    ],
+    refs: '§15.2 ① · §3.2.1 · §14.1' },
 
   { id: '15', sel: '.rcpt-send', title: 'Receipt — send to email', tags: 'DEV / PM',
     bullets: [
@@ -7321,6 +7471,7 @@ const ANNOS = [
       'A selection belongs to the page it was made on. Changing the page, the rows per page, the search or a filter clears it. Selecting past the page is done only with <code>Select all {N} orders that match these filters</code> (next item).',
       'Pressing an order number opens that order’s detail page, which has its own <code>Download PO</code>.',
       '<code>Export</code> downloads a CSV of the orders in the current view, <code>shopcord-orders-{date}.csv</code>. It never contains POs. While rows are selected the selection bar covers it (next item).',
+      'While the vendor is not subscribed, the Buyer column is locked and pressing an order number opens the subscribe offer instead of the detail (§3.2.1 · §14.1).',
     ],
     edge: [
       'The PRD names two PO entry points: the vendor order detail and the buyer order history (§15.2 ① · PB 6.4.0). This list is not one of them, and PB 6.4.0 has to add it.',
@@ -7333,10 +7484,12 @@ const ANNOS = [
     bullets: [
       'While any row is selected, the selection bar covers the toolbar: the count and the select-all link on the left, and two text buttons on the right, <code>Download {n} POs</code> and <code>Clear selection</code>. The toolbar keeps its space underneath, so the table does not move. <code>Clear selection</code>, or unticking every row, brings the toolbar back.',
       '<code>{n}</code> counts only the selected orders that have a PO. Pressing the button downloads <b>one ZIP</b>, <code>POs_{date}.zip</code>, with one PDF per order named by its PO number. The selection then clears.',
+      'Each PDF in it is that order’s own PO, the same file Download PO gives on the order’s detail page. The list only bundles them into one download: nothing is merged or generated again, so 5, 10 or up to 100 orders come down in one go.',
       'Selected orders that are still <code>New</code> are <b>skipped</b>. The toast gives the count: <i>“{n} POs downloaded”</i> over <i>“POs_{date}.zip · {k} not yet confirmed, skipped”</i>.',
       'When every selected order is <code>New</code>, the button reads <code>Download POs</code> and is disabled. Hover: <i>“None of the selected orders has a PO yet. A PO is created when an order is confirmed.”</i>',
       'When the whole page is selected and more orders match the filters, the bar offers <code>Select all {N} orders that match these filters</code>. After that it reads <i>“All orders that match these filters are selected”</i>, and the download covers every matching order. Unticking a row then keeps all the others selected.',
       'One download takes at most <b>100 orders</b>. When more than 100 match, the select-all link is replaced by <i>“Up to 100 orders per download”</i>.',
+      'While the vendor is not subscribed, <code>Download POs</code> still downloads, and every buyer field on those POs reads Locked, as in the Buyer column (§3.2.1).',
     ],
     edge: [
       'ZIP or one merged PDF is not decided. The PRD sets neither, nor the 100-order limit.',

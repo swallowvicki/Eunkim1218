@@ -528,6 +528,8 @@
   .rclamp.is-clamped:not(.is-open) .rc-t { -webkit-mask-image: linear-gradient(to bottom, #000 1.9lh, transparent 2.9lh); mask-image: linear-gradient(to bottom, #000 1.9lh, transparent 2.9lh); }
   .rclamp.is-open .rc-t { max-height: none; }
   .rc-btn { display: block; width: 100%; margin-top: 4px; padding: 0; border: 0; background: none; font: inherit; font-weight: 400; color: inherit; text-align: inherit; text-decoration: underline; /* 10-28 "weight을 레귤러로" (예전 600 세미볼드) */ cursor: pointer; }
+  /* 11-12 세로로 쌓이는 숫자 칸 = 같은 폭 숫자(Figma Monospace 와 같음) — 롤백: TNUM_COLS = false */
+  html.tnum-cols .a1-pack b { font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -675,6 +677,8 @@
      변형마다 내는 값을 값으로 표현: WS 만 = P(ws, ws, ws) · Sale = P(ws, sale, sale) · Special = P(ws, ws, sp) — 가격종류는 ⑧(Sale · Special 둘 다 보는 조합)으로 고정, MSRP 없음.
      PRICE_CASES = false 면 줄째 숨김 · 백업 …backup-before-price-cases.html */
   var PRICE_CASES = true;
+  var TNUM_COLS = true;   /* 11-12 숫자 칸 tabular-nums (false = 예전처럼 글자마다 다른 폭) */
+  document.documentElement.classList.toggle('tnum-cols', TNUM_COLS);
   var PCASE = {
     '1': [{ ws: 20, sale: 18 }, { ws: 23, sale: 21 }],
     '2': [{ ws: 30 }, { ws: 40, sale: 35 }],
@@ -1030,9 +1034,18 @@
   var CART_A1 = true;
   var CART_COLS_NARROW = true;
   var WS_ABOVE_ONLY = true;
+  /* 11-10 사이즈 표 WS 칸 = 늘 WS 값 + 취소선(Price 와 같아도), WS 열 늘 있음 · `—` 는 값 없는 칸만(MSRP) — 사용자 "WS는 필수값이니, 상시 보여주고 MSRP 혹은 Sale Price에 값이 없는 것만 —" · "취소선 그대로".
+     바이어 오더 상세(ORDER_PAY_ONLY)는 WS 칸 자체가 없으니 그대로. false 면 바로 전 · 백업 …backup-before-ws-always.html */
+  var WS_ALWAYS = true;
+  /* 11-12 카트 카드 사이즈 표에 MSRP 칸 없음 — 사용자 "QA2번에서 카트에서는 MSRP 노출 안하기로 했어 그래서 피그마랑 목업 다 삭제해줘".
+     카트 카드(Pre Pack · Open Pack 표)만. Edit Qty 시트는 「카트 안의 PDP」라 PDP 처럼 MSRP 그대로. 오더는 원래 없음(ORDER_PAY_ONLY).
+     false 면 바로 전(MSRP 있으면 칸) · 백업 …backup-before-cart-no-msrp.html */
+  var CART_NO_MSRP = true;
   function a1Cols(it) {
     var w = false, m = false;
     lines(it).forEach(function (l) { it.sizes.forEach(function (sz) { var pr = vprice(it, l.c, sz); if (pr.ws > payOf(pr) + 0.005) w = true; if (msrpV(pr) > 0) m = true; }); });
+    if (WS_ALWAYS) w = true;   /* 11-10 WS 늘 — PDP WS_ALWAYS 와 같음 */
+    if (CART_NO_MSRP) m = false;
     if (ORDER_PAY_ONLY && inOrd) w = m = false;
     /* 10-26 "1번으로 해줘" — 라벨 12px 에서 카드 안 이름 자리가 38px 라 15자 이름이 단어 중간에서 끊김(Toddl/er) → 가격 칸 58/48/48 → 50/40/40, 이름 자리 약 62px(PDP 처럼 두 줄).
        카트 카드 · 오더 상세 · In-progress 박스 공통. CART_COLS_NARROW = false 면 예전 · 백업 …backup-before-narrow-cols.html */
@@ -1042,7 +1055,7 @@
   function a1Cells(it, c, sz, cols) {
     var pr = vprice(it, c, sz), p = payOf(pr), disc = pr.ws > p + 0.005 && !(ORDER_PAY_ONLY && inOrd);
     return '<span class="a1-p' + (disc ? ((PM_POLICY ? isSpAt(pr) : state.ptype === 'special') ? ' is-sp' : ' is-sale') : '') + '">' + money(p).slice(1) + '</span>' +
-      (cols.ws ? '<span class="a1-c">' + (disc ? '<s>' + money(pr.ws).slice(1) + '</s>' : '\u2014') + '</span>' : '') +
+      (cols.ws ? '<span class="a1-c">' + (disc || WS_ALWAYS ? '<s>' + money(pr.ws).slice(1) + '</s>' : '\u2014') + '</span>' : '') +
       (cols.msrp ? '<span class="a1-c">' + (msrpV(pr) > 0 ? money(pr.msrp).slice(1) : '\u2014') + '</span>' : '');
   }
   /* Open Pack 도 A1 과 같은 말 (2026-10-14 "오픈팩이랑 맞추지 않아도 괜찮아?" → "오픈팩 먼저 맞춰줘") — 표 머리 상품마다 한 번
@@ -1112,7 +1125,10 @@
   }
 
   /* ══ 그리기 ══ */
-  function visibleItems() { return state.cart === 'empty' ? [] : state.items; }
+  /* 11-10 사용자 (UNAVAILABLE · Item Unavailable 카드 캡처) "이것도 삭제" — 캔슬 · 판매 불가 아이템은 카트에서 그냥 사라짐 → Unavailable 카드 · 빨간 안내 · 토스트 없음.
+     true 면 예전(회색 카드 + Item Unavailable) · 백업 …backup-before-no-canceled.html */
+  var SHOW_UNAVAILABLE = false;
+  function visibleItems() { return state.cart === 'empty' ? [] : SHOW_UNAVAILABLE ? state.items : state.items.filter(function (it) { return !it.unavailable; }); }
   function chosen() { return visibleItems().filter(function (it) { return !it.unavailable && state.sel[it.id]; }); }
   function render() {
     persist();
@@ -1509,8 +1525,11 @@
       '<div class="ci-r">' + (cx ? '<span class="badge b-canceled">Canceled</span>' : '<span class="pill ' + (it.method === 'pre' ? 'pre">Pre Pack' : 'open">Open Pack') + '</span>') +
       '<b>' + money(itemTotal(it)) + '</b><span>' + itemPcs(it) + ' pcs</span></div></div>' + (cx ? '' : ciBox(it)) + '</div>';
   }
+  /* 11-10 사용자 (Canceled Items 카드 캡처) "이런 케이스 다 삭제해줘 캔슬되면 그냥 카트에서 사라지게했어" → 오더 상세에 Canceled Items 칸 없음, 취소된 아이템은 목록에서 그냥 빠짐.
+     Amount details(Original order amount · Confirmed amount)는 그대로 — 오더 데이터라 칸만 뺌. true 면 예전(빨간 Canceled Items 칸) · 백업 …backup-before-no-canceled.html */
+  var SHOW_CANCELED = false;
   function inprogHTML(o) {
-    var cx = o.canceled || [], orig = oAmt(o) + cx.reduce(function (t, it) { return t + itemTotal(it); }, 0);
+    var cx = SHOW_CANCELED ? (o.canceled || []) : [], orig = oAmt(o) + (o.canceled || []).reduce(function (t, it) { return t + itemTotal(it); }, 0);
     var h = '<div class="osec"><h2>Items</h2>' + o.items.map(function (it) { return ciRow(it, false); }).join('') + '</div>';
     if (cx.length) h += '<div class="osec"><h2 class="is-red">Canceled Items</h2>' + cx.map(function (it) { return ciRow(it, true); }).join('') + '</div>';
     h += '<div class="osec"><h2>Amount details</h2><div class="amt-box"><div><span>Original order amount</span><b>' + money(orig) + '</b></div><div><span>Confirmed amount</span><b>' + money(oAmt(o)) + '</b></div></div></div>';
@@ -1654,6 +1673,7 @@
   function sheetCols(it) {
     var w = false, m = false;
     it.colors.forEach(function (c) { it.sizes.forEach(function (sz) { var pr = vprice(it, c, sz); if (pr.ws > payOf(pr) + 0.005) w = true; if (msrpV(pr) > 0) m = true; }); });
+    if (WS_ALWAYS) w = true;
     return { ws: w, msrp: m, tpl: 'minmax(0, 1fr) 62px' + (w ? ' 50px' : '') + (m ? ' 50px' : '') };
   }
   function openEdit(id) {
@@ -1756,7 +1776,7 @@
   $('cta').onclick = function () {
     if (state.view === 'checkout') { placeOrder(); return; }
     /* 사용할 수 없는 상품이 남아 있으면 결제를 막는다 (규칙 5) */
-    if (state.cart !== 'empty' && state.items.some(function (it) { return it.unavailable; })) {
+    if (SHOW_UNAVAILABLE && state.cart !== 'empty' && state.items.some(function (it) { return it.unavailable; })) {
       toast('err', '<b>Item Unavailable</b> - Please remove it from your cart to continue.');
       var el = document.querySelector('.item.is-off'); if (el) $('screen').scrollTop = el.offsetTop - 80;
       return;

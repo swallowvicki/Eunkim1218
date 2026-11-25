@@ -924,6 +924,8 @@
   html.is-embed, html.is-embed body { background: transparent; }
   html.is-embed .app, html.is-embed .scrim { display: none; }
   html.is-embed .drawer, html.is-embed .drawer.is-wide { width: 100%; max-width: none; border-left: 0; box-shadow: none; }
+  /* 11-12 세로로 쌓이는 숫자 칸 = 같은 폭 숫자(Figma Monospace 와 같음) — 롤백: TNUM_COLS = false */
+  html.tnum-cols .vt-input { font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -1150,7 +1152,7 @@
           Click or Drop
         </div>
       </div>
-      <div class="section-hint" style="margin-top:8px">Drag to reorder · hover to preview · ✕ to remove</div>
+      <div class="section-hint" id="imgHint" style="margin-top:8px">Drag to reorder · hover to preview · ✕ to remove</div>
     </section>
 
     <!-- Options (Max. 2) -->
@@ -1360,6 +1362,22 @@
      앞 10개는 사용자가 준 실제 값, 나머지 20개는 같은 결로 만든 값 — 30개 모두 정확히 15자.
      원래 3색(Burgundy · Black · Brown)으로 돌리려면 false */
   var DEMO_MAX_VALUES = true;
+  /* 11-13 표 제목 옆 개수 「(N packs)」 · 「(N variants)」 삭제 — AS-IS 에 없고 근거 없이 넣은 것, Open Pack 은 Options 「N / 2,048 variants」와 중복 (사용자 "목업에만 우선 지워줘").
+     true 면 다시 보임 · 백업 …backup-before-no-table-count.html */
+  var TABLE_COUNT = false;
+  /* 11-13 Price per variant 끈 뒤 남은 줄 가격 안내 「Some rows still have their own price. …」 삭제 (사용자 "나오는곳 모두 삭제").
+     값은 그대로 보관(9-28 B안) — 문구만 뺌. true 면 다시 보임 · 백업 …backup-before-no-leftover-note.html */
+  var LEFTOVER_NOTE = false;
+  /* 11-13 Price per variant 켰을 때 표 밑 안내 「Prices are per piece. …」 · 「Use Apply to all … · Tab moves down the column.」 삭제 —
+     AS-IS · PRD 에 없이 넣은 것(사용자 "너가 맘대로 넣은거 삭제"). 비면 테두리 칸도 숨김. true 면 다시 보임 · 백업 …backup-before-no-table-note.html */
+  var TABLE_NOTE = false;
+  /* 11-13 AS-IS 에 없던 안내 문구 삭제 (사용자 "저런 문구는 다 없던거니까 삭제") — Images 밑 「Drag to reorder · hover to preview · ✕ to remove」,
+     Prices 밑 「This amount covers everything you sell. …」 (Prices 제목 옆 hint 는 09-29 PRICES_HINT=false 로 이미 꺼짐).
+     true 면 다시 보임 · 백업 …backup-before-no-hints.html */
+  var EXTRA_HINTS = false;
+  if (!EXTRA_HINTS) document.addEventListener('DOMContentLoaded', function () { var h = document.getElementById('imgHint'); if (h) h.hidden = true; });
+  var TNUM_COLS = true;   /* 11-12 숫자 칸 tabular-nums (false = 예전처럼 글자마다 다른 폭) */
+  document.documentElement.classList.toggle('tnum-cols', TNUM_COLS);
   /* ══ MSRP 팩 단위 (2026-09-29) ══
      Pre Pack 표에서 WS·Sale 은 팩 총액인데 MSRP 만 낱개라 한 행이 129.00 / 117.00 / 45.00 으로 보였다.
      계산상 맞아도(45 ≥ 129 ÷ 6) 눈으로는 MSRP 가 WS 보다 낮게 읽히고, 팩 금액을 MSRP 칸에 넣는 실수도 부른다.
@@ -2459,7 +2477,7 @@
     var model = sellRows();
     /* 접기 화살표가 팩 줄 오른쪽 끝에 붙으므로, 나머지 줄은 같은 폭을 비워 열을 맞춘다 */
     $('sellTableCard').classList.toggle('is-fold-mode', false);   /* 줄 끝 화살표를 뺐다 — 오른쪽을 비울 필요 없음 */
-    $('variantCount').textContent = model.total
+    $('variantCount').textContent = model.total && TABLE_COUNT && liveOptions().length !== 1   /* 11-13 정책: 옵션 1개면 Pre(늘 1 pack) · Open(줄 = 옵션 값) 둘 다 개수 안 보임 */
       ? '(' + model.total + ' ' + unitWord(model.total !== 1) + ')' : '';
 
     if (!model.total) {
@@ -3104,13 +3122,15 @@
         : MSRP_PER_PACK
         ? '<b>WS Price, Sale Price and MSRP are for the whole box.</b>'
         : '<b>WS Price and Sale Price are for the whole box; MSRP is per piece.</b>');
-    } else if (anyRowPrice()) {
+    } else if (LEFTOVER_NOTE && anyRowPrice()) {
       lines.push('<b>Some rows still have their own price.</b> They are kept but not used — turn <b>Price per ' +
         pvName() + '</b> back on to see them.');
     }
     var oneFlat = ONE_OPTION_FLAT && liveOptions().length === 1 && !isPrePack();   /* 옵션 1개 Open Pack 은 묶음 줄이 없다 */
     if (state.priceVar) lines.push('Use <b>Apply to all</b>' + (oneFlat ? '' : ' or a group header') + ' to fill many rows at once \u00b7 <b>Tab</b> moves down the column.');
+    if (!TABLE_NOTE) lines = lines.filter(function (l) { return /Some rows still/.test(l); });   /* 11-13 표 밑 사용법 안내 두 줄 삭제 */
     note.innerHTML = lines.join('<br>');
+    note.hidden = !lines.length && (!LEFTOVER_NOTE || !TABLE_NOTE);   /* 11-13 빈 안내 칸(테두리 줄)도 숨김 — Figma 처럼 */
   }
 
   ['baseWs', 'baseSale', 'baseMsrp'].forEach(function (id) {
@@ -3121,7 +3141,7 @@
   /* Prices section stays editable at all times — options only change the copy. */
   function renderPrices(missingCount, badCount, msrpCount, rowBadCount) {
     var opts = hasOptions();
-    $('pricesHint2').hidden = !opts || state.priceVar;
+    $('pricesHint2').hidden = !opts || state.priceVar || !EXTRA_HINTS;   /* 11-13 AS-IS 에 없는 안내 삭제 */
     var hint = 'Enter the price for this item';
     if (opts) {
       hint = 'Applies to everything you sell';

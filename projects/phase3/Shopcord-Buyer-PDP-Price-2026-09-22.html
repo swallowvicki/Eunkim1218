@@ -381,6 +381,8 @@
   .rclamp.is-clamped:not(.is-open) .rc-t { -webkit-mask-image: linear-gradient(to bottom, #000 1.9lh, transparent 2.9lh); mask-image: linear-gradient(to bottom, #000 1.9lh, transparent 2.9lh); }
   .rclamp.is-open .rc-t { max-height: none; }
   .rc-btn { display: block; width: 100%; margin-top: 4px; padding: 0; border: 0; background: none; font: inherit; font-weight: 400; color: inherit; text-align: inherit; text-decoration: underline; /* 10-28 "weight을 레귤러로" (예전 600 세미볼드) */ cursor: pointer; }
+  /* 11-12 세로로 쌓이는 숫자 칸 = 같은 폭 숫자(Figma Monospace 와 같음) — 롤백: TNUM_COLS = false */
+  html.tnum-cols .a1-pack b { font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -585,6 +587,8 @@
      어드민 표는 팩(6pcs) 단위라 여기선 ÷6 한 낱개가로 적는다. Special Price 는 어드민에 없는 값이라 데모용.
      되돌리려면 false — 예전 Red · Yellow · Green 3색 데이터로 돌아간다 */
   var ADMIN_DATA = true;
+  var TNUM_COLS = true;   /* 11-12 숫자 칸 tabular-nums (false = 예전처럼 글자마다 다른 폭) */
+  document.documentElement.classList.toggle('tnum-cols', TNUM_COLS);
   var ADMIN_COLOR_NAMES = [
     'Heathered Olive', 'Light Wash Blue', 'Burgundy Velvet', 'Charcoal Marled', 'Dusty Rose Pink',
     'Black/White Dot', 'Sage Green Mist', 'Ivory Off-White', 'Rainbow Tie-Dye', 'Midnight Indigo',
@@ -1077,6 +1081,7 @@
   function unitPrice(colorName) { return isPre() ? (state.data === 'worst' ? packOf(colorName) : pcPrice(colorName) * pcs()) : pcPrice(colorName); }
   function lowPc() { return Math.min.apply(null, pricedColors().map(function (c) { return pcPrice(c.name); })); }
   function highPc() { return Math.max.apply(null, pricedColors().map(function (c) { return pcPrice(c.name); })); }
+  var TOTAL_DETAIL = false;
   function varies() { return highPc() - lowPc() > 0.005; }
 
   /* ── 차액 가드 ① 기준가가 실재할 때만 ──
@@ -1294,16 +1299,21 @@
   if (!state.folded) state.folded = {};
   function preA1On() { return PRE_A1 && isPre() && PRE_PC_ONLY && VARIANT_PRICE && ADMIN_DATA; }
   function packOf(name) { var t = 0; Object.keys(PACK_RATIO).forEach(function (k) { t += pcPrice(name, k) * PACK_RATIO[k]; }); return t; }
+  /* 11-10 Kelly 코멘트 → 사용자 "WS는 필수값이니, 상시 보여주고 MSRP 혹은 Sale Price에 값이 없는 것만 — 보여주는것으로" ·
+     질문 답 "취소선 그대로" · "WS 열 항상 보여줌". 사이즈 표 WS 칸 = 늘 WS 값 + 취소선(Price 와 같아도), 할인이 하나도 없어도 WS 열 있음.
+     `—` 는 값이 없는 칸만(MSRP). false 면 바로 전(할인 없는 사이즈 WS `—` · 할인 없으면 WS 열 없음) · 백업 …backup-before-ws-always.html */
+  var WS_ALWAYS = true;
   function a1Cols() {
     var w = false, m = false;
     COLORS.forEach(function (c) { Object.keys(PACK_RATIO).forEach(function (k) { if (listPrice(c.name, k) > pcPrice(c.name, k) + 0.005) w = true; if (msrpOf(c.name, k) > 0) m = true; }); });
+    if (WS_ALWAYS) w = true;
     return { ws: w, msrp: m, tpl: 'minmax(0, 1fr) 62px' + (w ? ' 50px' : '') + (m ? ' 50px' : '') };
   }
   function a1Cells(name, k, cols) {
     var p = pcPrice(name, k), w = listPrice(name, k), m = msrpOf(name, k), disc = w > p + 0.005;
     var cls = disc ? ((PM_POLICY ? spAt(name, k) : hasSpecial(name)) ? ' is-sp' : ' is-sale') : '';
     return '<span class="a1-p' + cls + '">' + money(p).slice(1) + '</span>' +
-      (cols.ws ? '<span class="a1-c">' + (disc ? '<s>' + money(w).slice(1) + '</s>' : '\u2014') + '</span>' : '') +
+      (cols.ws ? '<span class="a1-c">' + (disc || WS_ALWAYS ? '<s>' + money(w).slice(1) + '</s>' : '\u2014') + '</span>' : '') +
       (cols.msrp ? '<span class="a1-c">' + (m > 0 ? money(m).slice(1) : '\u2014') + '</span>' : '');
   }
   /* 수량 칸 = 가격 줄 밑 (2026-10-14) · false 면 바로 전(가격 줄 오른쪽 끝 108px 칸) · 백업 …backup-before-open-step-below.html */
@@ -1312,7 +1322,7 @@
     var w = false, m = false, pv = [];
     COLORS.forEach(function (c) { SIZES.forEach(function (sz) { var p = pcPrice(c.name, sz); pv.push(p); if (listPrice(c.name, sz) > p + 0.005) w = true; if (msrpOf(c.name, sz) > 0) m = true; }); });
     var show = Math.max.apply(null, pv) - Math.min.apply(null, pv) > 0.005 || w;
-    var cols = { ws: w && show, msrp: m && show };
+    var cols = { ws: (w || WS_ALWAYS) && show, msrp: m && show };
     /* 수량 칸은 가격 줄 밑으로 (2026-10-14 "두개가 비슷하게 해야되니까 숫자 입력칸을 가격 밑으로 넣는건 어때?") — 숫자 칸이 행 폭을 다 쓰고 Pre Pack 과 칸 폭 · 위치가 같다 */
     var tpl = 'minmax(0, 1fr)' + (show ? ' 62px' : '') + (cols.ws ? ' 50px' : '') + (cols.msrp ? ' 50px' : '') + (OPEN_STEP_BELOW ? '' : ' 108px');
     if (state.openAxis === 'size') {
@@ -1612,7 +1622,9 @@
     $('totalAmount').textContent = money(amount);
 
     var box = $('total'), head = $('totalHead');
-    var canOpen = varies() && lines.length > 0;
+    /* 11-10 사용자 "여기 화살표 누르면 뭐나와?" · "원래는 없는 기능이었어" · "응 빼줘" → 합계 펼치기(09-22 ⑤) 뺌. 줄마다 변형 가격 · 수량이 이미 보여 같은 정보 반복.
+       Total 은 AS-IS 처럼 한 줄(`Total pcs: 12  $237.00`), 화살표 없음. true 면 예전 펼치기 · 백업 …backup-before-no-total-detail.html */
+    var canOpen = TOTAL_DETAIL && varies() && lines.length > 0;
     head.classList.toggle('is-toggle', canOpen);
     $('totalChev').innerHTML = canOpen ? CHEV : '';
     box.classList.toggle('is-open', canOpen && state.open);

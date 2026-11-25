@@ -242,6 +242,8 @@
   .scb-acct b { flex: 1; font-size: 14px; font-weight: 700; color: #1f1f1f; }
   .scb-acct > svg { width: 16px; height: 16px; color: #a3a3a3; }
   html[data-bulk="off"] .c-cb, html[data-bulk="off"] #bulk, html[data-bulk="off"] .done { display: none !important; }
+  /* 11-12 세로로 쌓이는 숫자 칸 = 같은 폭 숫자(Figma Monospace 와 같음) — 롤백: TNUM_COLS = false */
+  html.tnum-cols td.pr, html.tnum-cols .pr, html.tnum-cols .spin input { font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -331,6 +333,8 @@
   /* 10-19 "라인시트의 Pre Pack도 항상 사이즈별로 펼칠까요?" → "펼쳐줘" — PDP · 카트와 같이 값이 같아도 팩마다 사이즈 줄(기본 펼침, › 로 접기).
      되돌리려면 false(사이즈 값이 다를 때만 Olive 처럼 펼침) · 백업 …backup-before-all-sizes.html */
   var LS_ALL_SIZES = true;
+  var TNUM_COLS = true;   /* 11-12 숫자 칸 tabular-nums (false = 예전처럼 글자마다 다른 폭) */
+  document.documentElement.classList.toggle('tnum-cols', TNUM_COLS);
   /* 10-19 "벤더 어드민에서도 접혀있게해줘" — PDP 처럼 Pre Pack 은 기본 접힘(팩 줄의 값 · 날짜는 보임), 화살표로 펼침. 되돌리려면 false(전부 펼친 채로 시작) · 백업 …backup-before-admin-fold.html */
   var LS_FOLD_SHUT = true;
   /* 11-03 사용자 "프리팩인경우에 오른쪽 휴지통 왼쪽 Expand collapse … 다 열어주거나 다 닫아주거나 … 옵션별로도 열고닫기가 있어서 할 수 있으나, 전체적으로는 다 열고 다 닫기".
